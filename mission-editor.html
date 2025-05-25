@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DroneBoat Mission Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #f0f0f0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1a3a5a;
+            color: white;
+            padding: 10px 20px;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #2ecc71;
+        }
+        .power-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .power-bar {
+            width: 100px;
+            height: 10px;
+            background-color: #2ecc71;
+            border-radius: 5px;
+        }
+        .battery-percent {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .close-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 50px);
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+        }
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 10px;
+            border-right: 1px solid #ddd;
+        }
+        .main-content {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tree-item {
+            padding: 5px 10px;
+            margin: 2px 0;
+            background-color: #f8f8f8;
+            cursor: pointer;
+        }
+        .tree-item.selected {
+            background-color: #e0f0ff;
+        }
+        .blue-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .green-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .red-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .map-view {
+            flex: 1;
+            background-color: #1a3a5a;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .waypoint {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .boat {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            transform: translate(-50%, -50%);
+        }
+        .boat svg {
+            fill: red;
+        }
+        .table-container {
+            margin-top: 10px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            margin: 0 5px;
+            border-radius: 5px;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .edit-btn {
+            background-color: #f39c12;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .bottom-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .invia-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .waypoint-info {
+            position: absolute;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            max-width: 200px;
+            z-index: 10;
+        }
+        .elimina-waypoint {
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">DroneBoat Control - Editor Missioni</div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <div>Connesso</div>
+        </div>
+        <div>IP: 192.168.1.10</div>
+        <div class="power-status">
+            <div>120W | 180W</div>
+            <div class="power-bar"></div>
+        </div>
+        <div class="battery-percent">85%</div>
+        <div class="close-btn" onclick="window.location.href='index.html'">X</div>
+    </div>
+
+    <div class="container">
+        <div class="main-container">
+            <div class="sidebar">
+                <div class="section-title">Albero Missioni</div>
+                <button class="blue-btn" id="aggiorna-btn">Aggiorna</button>
+                <div class="tree-item">/ (Root)</div>
+                <div class="tree-item selected">Missioni</div>
+                <div class="tree-item">Costiere</div>
+                <div class="tree-item">MB-1 | WP: 6</div>
+                <div class="tree-item">MB-2 | WP: 4</div>
+                <div class="tree-item">MB-3 | WP: 4</div>
+                
+                <div class="btn-group">
+                    <button class="green-btn" id="carica-btn">Carica</button>
+                    <button class="red-btn" id="elimina-btn">Elimina</button>
+                </div>
+                
+                <div class="section-title">Configurazione</div>
+                <div class="form-group">
+                    <label for="mission-id">ID Missione:</label>
+                    <input type="text" id="mission-id" value="MB">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mission-number">Numero:</label>
+                    <select id="mission-number">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="wp-start">WP Inizio:</label>
+                    <input type="number" id="wp-start" value="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cycles">Cicli:</label>
+                    <input type="number" id="cycles" value="2">
+                </div>
+                
+                <div class="form-group">
+                    <label for="wp-end">WP Fine:</label>
+                    <input type="number" id="wp-end" value="3">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mission-end">Fine Missione:</label>
+                    <select id="mission-end">
+                        <option value="1">Vai a successiva</option>
+                        <option value="2">Ripeti</option>
+                        <option value="3">Torna indietro</option>
+                    </select>
+                </div>
+                
+                <div class="section-title">Prossima Missione</div>
+                <div class="form-group">
+                    <label for="next-mission-id">ID Missione:</label>
+                    <input type="text" id="next-mission-id" value="MB">
+                </div>
+                
+                <div class="form-group">
+                    <label for="next-mission-number">Numero:</label>
+                    <select id="next-mission-number">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4" selected>4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="next-wp-init">WP Iniziale:</label>
+                    <input type="number" id="next-wp-init" value="1">
+                </div>
+            </div>
+
+            <div class="main-content">
+                <h2>Mappa Missione (Vista Satellite)</h2>
+                <div class="map-view">
+                    <div class="map-controls">
+                        <div class="zoom-control">
+                            <span>Zoom</span>
+                            <input type="range" min="1" max="100" value="50">
+                        </div>
+                        <button class="blue-btn">Centra Barca</button>
+                    </div>
+                    
+                    <div class="waypoint waypoint-1" style="top: 40%; left: 30%; background-color: #2ecc71;" data-id="1" data-lat="41.8827" data-lon="12.4964">1</div>
+                    <div class="waypoint waypoint-2" style="top: 30%; left: 50%; background-color: #3498db;" data-id="2" data-lat="41.8830" data-lon="12.4980">2</div>
+                    <div class="waypoint waypoint-3" style="top: 40%; left: 70%; background-color: #f39c12;" data-id="3" data-lat="41.8835" data-lon="12.4975">3</div>
+                    <div class="waypoint waypoint-4" style="top: 60%; left: 50%; background-color: #e74c3c;" data-id="4" data-lat="41.8840" data-lon="12.4985">4</div>
+                    
+                    <div class="boat" style="top: 45%; left: 45%;">
+                        <svg viewBox="0 0 24 24" width="40" height="40">
+                            <path d="M21,17H3V5H21V17Z M21,3H3C1.9,3 1,3.9 1,5V17C1,18.1 1.9,19 3,19H21C22.1,19 23,18.1 23,17V5C23,3.9 22.1,3 21,3Z" />
+                            <path d="M12,7L16,11H8L12,7Z" />
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="section-title">Tabella Waypoint</div>
+                <div id="waypoint-table"></div>
+                
+                <div class="bottom-buttons">
+                    <button class="invia-btn" id="invia-barca-btn">Invia alla barca</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        // Componente React per la tabella dei waypoint
+        const WaypointTable = () => {
+            const [waypoints, setWaypoints] = React.useState([
+                { id: 1, wp: 1, missione: 'MB-3', indice: 1, latitudine: 41.8827, longitudine: 12.4964, navMode: 'GAS2', pointType: 1, monitoringOp: 0, arriveMode: 0, wpRadius: 0.00002 },
+                { id: 2, wp: 2, missione: 'MB-3', indice: 2, latitudine: 41.8830, longitudine: 12.4980, navMode: 'GAS3', pointType: 1, monitoringOp: 0, arriveMode: 0, wpRadius: 0.00002 },
+                { id: 3, wp: 3, missione: 'MB-3', indice: 3, latitudine: 41.8835, longitudine: 12.4975, navMode: 'VEL2', pointType: 3, monitoringOp: 1, arriveMode: 1, wpRadius: 0.00010 },
+                { id: 4, wp: 4, missione: 'MB-3', indice: 4, latitudine: 41.8840, longitudine: 12.4985, navMode: 'GAS1', pointType: 0, monitoringOp: 0, arriveMode: 0, wpRadius: 0.00002 }
+            ]);
+            
+            const [editMode, setEditMode] = React.useState(null);
+            const [editData, setEditData] = React.useState({});
+            
+            // Funzione per eliminare un waypoint
+            const deleteWaypoint = (id) => {
+                if (confirm('Sei sicuro di voler eliminare questo waypoint?')) {
+                    setWaypoints(waypoints.filter(wp => wp.id !== id));
+                }
+            };
+            
+            // Funzione per iniziare a modificare un waypoint
+            const startEditing = (waypoint) => {
+                setEditMode(waypoint.id);
+                setEditData({...waypoint});
+            };
+            
+            // Funzione per salvare le modifiche
+            const saveEdit = () => {
+                setWaypoints(waypoints.map(wp => wp.id === editMode ? editData : wp));
+                setEditMode(null);
+            };
+            
+            // Funzione per gestire i cambiamenti nei campi di modifica
+            const handleEditChange = (e) => {
+                const { name, value } = e.target;
+                setEditData({...editData, [name]: value});
+            };
+            
+            // Funzione per aggiungere un nuovo waypoint
+            const addWaypoint = () => {
+                const newId = Math.max(...waypoints.map(wp => wp.id)) + 1;
+                const newIndex = Math.max(...waypoints.map(wp => wp.indice)) + 1;
+                
+                const newWaypoint = {
+                    id: newId,
+                    wp: newIndex,
+                    missione: 'MB-3',
+                    indice: newIndex,
+                    latitudine: 41.8830 + (Math.random() * 0.005),
+                    longitudine: 12.4970 + (Math.random() * 0.005),
+                    navMode: 'GAS1',
+                    pointType: 1,
+                    monitoringOp: 0,
+                    arriveMode: 0,
+                    wpRadius: 0.00002
+                };
+                
+                setWaypoints([...waypoints, newWaypoint]);
+            };
+            
+            return (
+                <div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>WP</th>
+                                <th>Missione</th>
+                                <th>Indice</th>
+                                <th>Latitudine</th>
+                                <th>Longitudine</th>
+                                <th>NavMode</th>
+                                <th>PointType</th>
+                                <th>MonitoringOp</th>
+                                <th>ArriveMode</th>
+                                <th>WPRadius</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {waypoints.map(waypoint => (
+                                <tr key={waypoint.id}>
+                                    {editMode === waypoint.id ? (
+                                        // Modalità modifica
+                                        <>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="wp" 
+                                                    value={editData.wp} 
+                                                    onChange={handleEditChange} 
+                                                    style={{width: '50px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="text" 
+                                                    name="missione" 
+                                                    value={editData.missione} 
+                                                    onChange={handleEditChange}
+                                                    style={{width: '70px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="indice" 
+                                                    value={editData.indice} 
+                                                    onChange={handleEditChange}
+                                                    style={{width: '50px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="latitudine" 
+                                                    value={editData.latitudine} 
+                                                    onChange={handleEditChange}
+                                                    step="0.0001"
+                                                    style={{width: '80px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="longitudine" 
+                                                    value={editData.longitudine} 
+                                                    onChange={handleEditChange}
+                                                    step="0.0001"
+                                                    style={{width: '80px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <select name="navMode" value={editData.navMode} onChange={handleEditChange}>
+                                                    <option value="GAS1">GAS1</option>
+                                                    <option value="GAS2">GAS2</option>
+                                                    <option value="GAS3">GAS3</option>
+                                                    <option value="VEL1">VEL1</option>
+                                                    <option value="VEL2">VEL2</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="pointType" 
+                                                    value={editData.pointType} 
+                                                    onChange={handleEditChange}
+                                                    style={{width: '50px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="monitoringOp" 
+                                                    value={editData.monitoringOp} 
+                                                    onChange={handleEditChange}
+                                                    style={{width: '50px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="arriveMode" 
+                                                    value={editData.arriveMode} 
+                                                    onChange={handleEditChange}
+                                                    style={{width: '50px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input 
+                                                    type="number" 
+                                                    name="wpRadius" 
+                                                    value={editData.wpRadius} 
+                                                    onChange={handleEditChange}
+                                                    step="0.00001"
+                                                    style={{width: '80px'}}
+                                                />
+                                            </td>
+                                            <td>
+                                                <button onClick={saveEdit} className="action-btn edit-btn">✓</button>
+                                                <button onClick={() => setEditMode(null)} className="action-btn delete-btn">✗</button>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        // Modalità visualizzazione
+                                        <>
+                                            <td>{waypoint.wp}</td>
+                                            <td>{waypoint.missione}</td>
+                                            <td>{waypoint.indice}</td>
+                                            <td>{waypoint.latitudine.toFixed(4)}</td>
+                                            <td>{waypoint.longitudine.toFixed(4)}</td>
+                                            <td>{waypoint.navMode}</td>
+                                            <td>{waypoint.pointType}</td>
+                                            <td>{waypoint.monitoringOp}</td>
+                                            <td>{waypoint.arriveMode}</td>
+                                            <td>{waypoint.wpRadius.toFixed(5)}</td>
+                                            <td>
+                                                <button 
+                                                    onClick={() => startEditing(waypoint)} 
+                                                    className="action-btn edit-btn"
+                                                    title="Modifica waypoint"
+                                                >E</button>
+                                                <button 
+                                                    onClick={() => deleteWaypoint(waypoint.id)} 
+                                                    className="action-btn delete-btn"
+                                                    title="Elimina waypoint"
+                                                >X</button>
+                                            </td>
+                                        </>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <button className="blue-btn" onClick={addWaypoint} style={{ marginTop: '10px' }}>
+                        Aggiungi Waypoint
+                    </button>
+                </div>
+            );
+        };
+
+        // Rendering del componente React nella pagina
+        ReactDOM.render(<WaypointTable />, document.getElementById('waypoint-table'));
+    </script>
+
+    <script>
+        // Funzione per tornare alla pagina principale
+        function backToMain() {
+            window.location.href = 'index.html';
+        }
+        
+        // Aggiunta di event listener ai pulsanti
+        document.getElementById('aggiorna-btn').addEventListener('click', function() {
+            alert('Aggiornamento missioni in corso...');
+        });
+        
+        document.getElementById('carica-btn').addEventListener('click', function() {
+            alert('Caricamento missione...');
+        });
+        
+        document.getElementById('elimina-btn').addEventListener('click', function() {
+            alert('Eliminazione missione...');
+        });
+        
+        document.getElementById('invia-barca-btn').addEventListener('click', function() {
+            alert('Invio missione alla barca...');
+        });
+        
+        // Rendere i waypoint trascinabili e cliccabili
+        const waypoints = document.querySelectorAll('.waypoint');
+        let activeWaypointInfo = null;
+        
+        waypoints.forEach(function(waypoint) {
+            // Gestione trascinamento
+            waypoint.addEventListener('mousedown', function(e) {
+                if (activeWaypointInfo) {
+                    activeWaypointInfo.remove();
+                    activeWaypointInfo = null;
+                }
+                
+                const wp = e.target;
+                const map = document.querySelector('.map-view');
+                
+                // Posizione iniziale del mouse
+                const startX = e.clientX;
+                const startY = e.clientY;
+                
+                // Posizione iniziale del waypoint
+                const startLeft = parseInt(wp.style.left);
+                const startTop = parseInt(wp.style.top);
+                
+                function moveAt(x, y) {
+                    // Calcolo della nuova posizione relativa al box della mappa
+                    const newLeft = Math.max(0, Math.min(100, startLeft + (x - startX) / map.offsetWidth * 100));
+                    const newTop = Math.max(0, Math.min(100, startTop + (y - startY) / map.offsetHeight * 100));
+                    
+                    wp.style.left = newLeft + '%';
+                    wp.style.top = newTop + '%';
+                    
+                    // Aggiornamento dei dati di latitudine e longitudine
+                    const baseLat = 41.88;
+                    const baseLon = 12.49;
+                    const newLat = baseLat + (newTop / 100 * 0.01);
+                    const newLon = baseLon + (newLeft / 100 * 0.02);
+                    
+                    wp.dataset.lat = newLat.toFixed(4);
+                    wp.dataset.lon = newLon.toFixed(4);
+                }
+                
+                function onMouseMove(e) {
+                    moveAt(e.clientX, e.clientY);
+                }
+                
+                // Muovi il waypoint quando il mouse si muove
+                document.addEventListener('mousemove', onMouseMove);
+                
+                // Rimuovi gli event listener quando il mouse viene rilasciato
+                document.addEventListener('mouseup', function() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                }, { once: true });
+                
+                // Impedisci la propagazione per evitare che l'evento raggiunga altri elementi
+                e.stopPropagation();
+            });
+            
+            // Mostra informazioni al click
+            waypoint.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // Rimuovi l'info box precedente se esiste
+                if (activeWaypointInfo) {
+                    activeWaypointInfo.remove();
+                }
+                
+                const wp = e.target;
+                const wpId = wp.dataset.id;
+                const lat = wp.dataset.lat;
+                const lon = wp.dataset.lon;
+                
+                // Crea un nuovo box informativo
+                const infoBox = document.createElement('div');
+                infoBox.className = 'waypoint-info';
+                infoBox.innerHTML = `
+                    <div><strong>Waypoint ${wpId}</strong></div>
+                    <div>Lat: ${lat}</div>
+                    <div>Lon: ${lon}</div>
+                    <button class="elimina-waypoint">Elimina</button>
+                `;
+                
+                // Posiziona il box vicino al waypoint
+                infoBox.style.left = wp.style.left;
+                infoBox.style.top = 'calc(' + wp.style.top + ' - 100px)';
+                
+                document.querySelector('.map-view').appendChild(infoBox);
+                activeWaypointInfo = infoBox;
+                
+                // Aggiungi l'event listener al pulsante elimina
+                infoBox.querySelector('.elimina-waypoint').addEventListener('click', function() {
+                    if (confirm('Sei sicuro di voler eliminare questo waypoint?')) {
+                        wp.remove();
+                        infoBox.remove();
+                        activeWaypointInfo = null;
+                    }
+                });
+            });
+        });
+        
+        // Chiudi il box informativo quando si clicca altrove sulla mappa
+        document.querySelector('.map-view').addEventListener('click', function(e) {
+            if (e.target.classList.contains('map-view') && activeWaypointInfo) {
+                activeWaypointInfo.remove();
+                activeWaypointInfo = null;
+            }
+        });
+    </script>
+</body>
+</html>

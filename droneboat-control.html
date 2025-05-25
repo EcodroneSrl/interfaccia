@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DroneBoat Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #f0f0f0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1a3a5a;
+            color: white;
+            padding: 10px 20px;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #2ecc71;
+        }
+        .power-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .power-bar {
+            width: 100px;
+            height: 10px;
+            background-color: #2ecc71;
+            border-radius: 5px;
+        }
+        .battery-percent {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        .close-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 50px);
+        }
+        .sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 10px;
+            border-right: 1px solid #ddd;
+        }
+        .main-content {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-sidebar {
+            width: 300px;
+            background-color: white;
+            padding: 10px;
+            border-left: 1px solid #ddd;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tree-item {
+            padding: 5px 10px;
+            margin: 2px 0;
+            background-color: #f8f8f8;
+            cursor: pointer;
+        }
+        .tree-item.selected {
+            background-color: #e0f0ff;
+        }
+        .blue-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .green-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .red-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn-group {
+            display: flex;
+            margin: 10px 0;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            margin: 5px;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .camera-view {
+            flex: 2;
+            background-color: #333;
+            margin-bottom: 10px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-view {
+            flex: 1;
+            background-color: #1a3a5a;
+            position: relative;
+        }
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .telemetry-section {
+            background-color: white;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .telemetry-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .waypoint {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .boat {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            transform: translate(-50%, -50%);
+        }
+        .boat svg {
+            fill: red;
+        }
+        .joystick-container {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .joystick {
+            width: 120px;
+            height: 120px;
+            background-color: #e0e0e0;
+            border-radius: 50%;
+            position: relative;
+        }
+        .joystick-handle {
+            width: 40px;
+            height: 40px;
+            background-color: #666;
+            border-radius: 50%;
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            cursor: move;
+        }
+        .mini-map {
+            width: 100%;
+            height: 200px;
+            background-color: #1a3a5a;
+            margin-top: 10px;
+            position: relative;
+        }
+        .camera-options {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .camera-option {
+            background-color: #555;
+            padding: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">DroneBoat Control</div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <div>Connesso</div>
+        </div>
+        <div>IP: 192.168.1.10</div>
+        <div class="power-status">
+            <div>GENERAZIONE: 180W</div>
+            <div>CONSUMO: 120W</div>
+            <div class="power-bar"></div>
+        </div>
+        <div class="battery-percent">85%</div>
+        <div class="close-btn">X</div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="section-title">Albero Missioni</div>
+            <button class="blue-btn" id="aggiorna-btn">Aggiorna</button>
+            <div class="tree-item">/ (Root)</div>
+            <div class="tree-item">Missioni</div>
+            <div class="tree-item">Costiere</div>
+            <div class="tree-item selected">MB-3 | WP: 4</div>
+            
+            <div class="btn-group">
+                <button class="green-btn" id="avvia-btn">Avvia</button>
+                <button class="blue-btn" id="visualizza-btn">Visualizza</button>
+                <button class="red-btn" id="elimina-btn">Elimina</button>
+            </div>
+
+            <div class="section-title">Modalità di Guida:</div>
+            
+            <div class="dropdown">
+                <button class="blue-btn">Teleguiadata ▼</button>
+                <div class="dropdown-content">
+                    <a href="#">Opzione 1</a>
+                    <a href="#">Opzione 2</a>
+                    <a href="#">Opzione 3</a>
+                    <a href="#">Opzione 4</a>
+                    <a href="#">Opzione 5</a>
+                </div>
+            </div>
+            
+            <div class="dropdown">
+                <button class="green-btn">Autonoma ▼</button>
+                <div class="dropdown-content">
+                    <a href="#">Opzione 1</a>
+                    <a href="#">Opzione 2</a>
+                    <a href="#">Opzione 3</a>
+                    <a href="#">Opzione 4</a>
+                    <a href="#">Opzione 5</a>
+                </div>
+            </div>
+            
+            <button class="red-btn" id="invia-btn">INVIA</button>
+
+            <div class="section-title" style="margin-top: 20px;">Crea Nuova Missione</div>
+            <div class="mini-map">
+                <div class="waypoint" style="top: 30%; left: 20%;">1</div>
+                <div class="waypoint" style="top: 30%; left: 50%;">2</div>
+                <div class="waypoint" style="top: 50%; left: 80%;">3</div>
+                <div class="waypoint" style="top: 70%; left: 30%;">4</div>
+            </div>
+            <button class="blue-btn" id="apri-editor-btn" onclick="openMissionEditor()">Apri Editor</button>
+        </div>
+
+        <div class="main-content">
+            <div class="camera-view">
+                <h2>Camera Principale</h2>
+                <div class="camera-options">
+                    <div class="camera-option">Vista SX</div>
+                    <div class="camera-option">Telecamera Frontale</div>
+                    <div class="camera-option">Vista DX</div>
+                </div>
+                <button class="blue-btn" style="margin-top: 20px;">Cambia Vista</button>
+            </div>
+            
+            <div class="map-view">
+                <h2 style="color: white; padding: 10px;">Mappa Satellitare</h2>
+                <div class="map-controls">
+                    <div class="zoom-control">
+                        <span>Zoom</span>
+                        <input type="range" min="1" max="100" value="50">
+                    </div>
+                    <button class="blue-btn">Centra</button>
+                </div>
+                
+                <div class="waypoint" style="top: 30%; left: 20%; background-color: #2ecc71;">1</div>
+                <div class="waypoint" style="top: 20%; left: 40%; background-color: #3498db;">2</div>
+                <div class="waypoint" style="top: 40%; left: 60%; background-color: #f39c12;">3</div>
+                <div class="waypoint" style="top: 60%; left: 80%; background-color: #e74c3c;">4</div>
+                
+                <div class="boat" style="top: 35%; left: 35%;">
+                    <svg viewBox="0 0 24 24" width="40" height="40">
+                        <path d="M21,17H3V5H21V17Z M21,3H3C1.9,3 1,3.9 1,5V17C1,18.1 1.9,19 3,19H21C22.1,19 23,18.1 23,17V5C23,3.9 22.1,3 21,3Z" />
+                        <path d="M12,7L16,11H8L12,7Z" />
+                    </svg>
+                </div>
+                
+                <div style="position: absolute; bottom: 10px; left: 10px; color: white; background-color: rgba(0,0,0,0.5); padding: 5px;">
+                    TEL_MODE_2 - Con mantenimento rotta
+                </div>
+                <div style="position: absolute; bottom: 10px; left: 250px; color: white; background-color: rgba(0,0,0,0.5); padding: 5px;">
+                    Autonomia: 4.5h
+                </div>
+                <div style="position: absolute; bottom: 10px; left: 400px; color: white; background-color: rgba(0,0,0,0.5); padding: 5px;">
+                    Distanza: 120m
+                </div>
+            </div>
+        </div>
+
+        <div class="right-sidebar">
+            <div class="section-title">Telemetria</div>
+            
+            <div class="telemetry-section">
+                <div class="section-title">Posizione</div>
+                <div class="telemetry-item">
+                    <span>Lat:</span>
+                    <span id="lat-value">41.8827° N</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Lon:</span>
+                    <span id="lon-value">12.4964° E</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Alt:</span>
+                    <span id="alt-value">0.5m</span>
+                </div>
+            </div>
+            
+            <div class="telemetry-section">
+                <div class="section-title">Orientamento</div>
+                <div class="telemetry-item">
+                    <span>Pitch:</span>
+                    <span id="pitch-value">2.1°</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Roll:</span>
+                    <span id="roll-value">0.5°</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Yaw:</span>
+                    <span id="yaw-value">182°</span>
+                </div>
+            </div>
+            
+            <div class="telemetry-section">
+                <div class="section-title">Navigazione</div>
+                <div class="telemetry-item">
+                    <span>Velocità:</span>
+                    <span id="speed-value">3.2 kn</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Rotta:</span>
+                    <span id="heading-value">182°</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Target:</span>
+                    <span id="target-value">20°</span>
+                </div>
+            </div>
+            
+            <div class="telemetry-section">
+                <div class="section-title">Energia</div>
+                <div class="telemetry-item" style="color: red;">
+                    <span>Consumo:</span>
+                    <span id="consumption-value">120W</span>
+                </div>
+                <div class="telemetry-item" style="color: green;">
+                    <span>Generazione:</span>
+                    <span id="generation-value">180W</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Efficienza:</span>
+                    <span id="efficiency-value">150%</span>
+                </div>
+            </div>
+            
+            <div class="telemetry-section">
+                <div class="section-title">Motori RPM</div>
+                <div class="telemetry-item" style="color: orange;">
+                    <span>Motore 1:</span>
+                    <span id="motor1-value">1250</span>
+                </div>
+                <div class="telemetry-item" style="color: orange;">
+                    <span>Motore 2:</span>
+                    <span id="motor2-value">1280</span>
+                </div>
+                <div class="telemetry-item" style="color: orange;">
+                    <span>Motore 3:</span>
+                    <span id="motor3-value">1255</span>
+                </div>
+                <div class="telemetry-item" style="color: orange;">
+                    <span>Motore 4:</span>
+                    <span id="motor4-value">1265</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Media:</span>
+                    <span id="avg-motor-value">1262.5 RPM</span>
+                </div>
+            </div>
+            
+            <div class="telemetry-section">
+                <div class="section-title">Stato Sistema</div>
+                <div class="telemetry-item">
+                    <span>Temperatura:</span>
+                    <span id="temp-value">28°C</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Umidità:</span>
+                    <span id="humidity-value">65%</span>
+                </div>
+                <div class="telemetry-item">
+                    <span>Autonomia:</span>
+                    <span id="autonomy-value">4.5h</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funzione per aprire l'editor delle missioni
+        function openMissionEditor() {
+            window.location.href = 'mission-editor.html';
+        }
+        
+        // Aggiornamento casuale dei valori di telemetria ogni 2 secondi
+        function updateTelemetry() {
+            // Posizione
+            document.getElementById('lat-value').textContent = (41.8827 + (Math.random() * 0.001 - 0.0005)).toFixed(4) + '° N';
+            document.getElementById('lon-value').textContent = (12.4964 + (Math.random() * 0.001 - 0.0005)).toFixed(4) + '° E';
+            document.getElementById('alt-value').textContent = (0.5 + (Math.random() * 0.2 - 0.1)).toFixed(1) + 'm';
+            
+            // Orientamento
+            document.getElementById('pitch-value').textContent = (2.1 + (Math.random() * 0.4 - 0.2)).toFixed(1) + '°';
+            document.getElementById('roll-value').textContent = (0.5 + (Math.random() * 0.4 - 0.2)).toFixed(1) + '°';
+            document.getElementById('yaw-value').textContent = Math.floor(182 + (Math.random() * 4 - 2)) + '°';
+            
+            // Navigazione
+            document.getElementById('speed-value').textContent = (3.2 + (Math.random() * 0.6 - 0.3)).toFixed(1) + ' kn';
+            document.getElementById('heading-value').textContent = Math.floor(182 + (Math.random() * 4 - 2)) + '°';
+            document.getElementById('target-value').textContent = Math.floor(20 + (Math.random() * 4 - 2)) + '°';
+            
+            // Energia
+            document.getElementById('consumption-value').textContent = Math.floor(120 + (Math.random() * 10 - 5)) + 'W';
+            document.getElementById('generation-value').textContent = Math.floor(180 + (Math.random() * 10 - 5)) + 'W';
+            document.getElementById('efficiency-value').textContent = Math.floor(150 + (Math.random() * 10 - 5)) + '%';
+            
+            // Motori
+            document.getElementById('motor1-value').textContent = Math.floor(1250 + (Math.random() * 20 - 10));
+            document.getElementById('motor2-value').textContent = Math.floor(1280 + (Math.random() * 20 - 10));
+            document.getElementById('motor3-value').textContent = Math.floor(1255 + (Math.random() * 20 - 10));
+            document.getElementById('motor4-value').textContent = Math.floor(1265 + (Math.random() * 20 - 10));
+            
+            // Ricalcolo media
+            const m1 = parseInt(document.getElementById('motor1-value').textContent);
+            const m2 = parseInt(document.getElementById('motor2-value').textContent);
+            const m3 = parseInt(document.getElementById('motor3-value').textContent);
+            const m4 = parseInt(document.getElementById('motor4-value').textContent);
+            const avg = ((m1 + m2 + m3 + m4) / 4).toFixed(1);
+            document.getElementById('avg-motor-value').textContent = avg + ' RPM';
+            
+            // Stato
+            document.getElementById('temp-value').textContent = (28 + (Math.random() * 1 - 0.5)).toFixed(1) + '°C';
+            document.getElementById('humidity-value').textContent = Math.floor(65 + (Math.random() * 4 - 2)) + '%';
+            document.getElementById('autonomy-value').textContent = (4.5 + (Math.random() * 0.2 - 0.1)).toFixed(1) + 'h';
+        }
+        
+        // Aggiunta di event listener ai pulsanti
+        document.getElementById('aggiorna-btn').addEventListener('click', function() {
+            alert('Aggiornamento missioni in corso...');
+        });
+        
+        document.getElementById('avvia-btn').addEventListener('click', function() {
+            alert('Avvio missione MB-3...');
+        });
+        
+        document.getElementById('visualizza-btn').addEventListener('click', function() {
+            alert('Visualizzazione missione MB-3...');
+        });
+        
+        document.getElementById('elimina-btn').addEventListener('click', function() {
+            alert('Eliminazione missione MB-3...');
+        });
+        
+        document.getElementById('invia-btn').addEventListener('click', function() {
+            alert('Invio comando alla barca...');
+        });
+        
+        // Aggiornamento periodico dei valori di telemetria
+        setInterval(updateTelemetry, 2000);
+        
+        // Inizializzazione all'avvio
+        updateTelemetry();
+        
+        // Rendere i waypoint trascinabili nel mini-editor
+        const waypoints = document.querySelectorAll('.mini-map .waypoint');
+        waypoints.forEach(function(waypoint) {
+            waypoint.addEventListener('mousedown', function(e) {
+                const wp = e.target;
+                const map = document.querySelector('.mini-map');
+                
+                // Posizione iniziale del mouse
+                const startX = e.clientX;
+                const startY = e.clientY;
+                
+                // Posizione iniziale del waypoint
+                const startLeft = parseInt(wp.style.left);
+                const startTop = parseInt(wp.style.top);
+                
+                function moveAt(x, y) {
+                    // Calcolo della nuova posizione relativa al box della mappa
+                    const newLeft = Math.max(0, Math.min(100, startLeft + (x - startX) / map.offsetWidth * 100));
+                    const newTop = Math.max(0, Math.min(100, startTop + (y - startY) / map.offsetHeight * 100));
+                    
+                    wp.style.left = newLeft + '%';
+                    wp.style.top = newTop + '%';
+                }
+                
+                function onMouseMove(e) {
+                    moveAt(e.clientX, e.clientY);
+                }
+                
+                // Muovi il waypoint quando il mouse si muove
+                document.addEventListener('mousemove', onMouseMove);
+                
+                // Rimuovi gli event listener quando il mouse viene rilasciato
+                document.addEventListener('mouseup', function() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                }, { once: true });
+            });
+        });
+    </script>
+</body>
+</html>
