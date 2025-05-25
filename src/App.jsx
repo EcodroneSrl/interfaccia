@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'jquery/dist/jquery.min.js';
 import 'bootstrap/dist/js/bootstrap.min.js';
+import { WebSocketMonitoring } from './components/WebSocketMonitoring';
+import { UserIdMonitoring } from './components/UserIdMonitoring';
 import { WebSocketProvider, WebSocketContext } from './components/Websockets';
 import { Missions } from './components/Missions/Missions';
 import { EcoMap } from './components/MultiComponents/EcoMap';
@@ -103,18 +105,6 @@ class DroneBoatInterface extends React.Component {
         }
     }
 
-    getConnectionStatus = () => {
-        const { wsState } = this.context;
-        const connectionStates = {
-            0: { text: "Messaging...", color: "#3498db" },
-            1: { text: "Connesso", color: "#2ecc71" },
-            2: { text: "Disconnessione...", color: "#f39c12" },
-            3: { text: "Disconnesso", color: "#e74c3c" },
-            4: { text: "Non Connesso", color: "#95a5a6" }
-        };
-        return connectionStates[wsState] || connectionStates[4];
-    };
-
     updateTelemetryData = (message) => {
         if (!message) return;
 
@@ -181,7 +171,6 @@ class DroneBoatInterface extends React.Component {
     render() {
         const { appst, user_id, setAppState } = this.props;
         const { telemetryData } = this.state;
-        const connectionStatus = this.getConnectionStatus();
 
         return (
             <>
@@ -189,11 +178,10 @@ class DroneBoatInterface extends React.Component {
                 <div style={styles.header}>
                     <div style={styles.title}>DroneBoat Control</div>
                     <div style={styles.statusIndicator}>
-                        <div style={{...styles.statusDot, backgroundColor: connectionStatus.color}}></div>
-                        <div>{connectionStatus.text}</div>
+                        <div style={styles.statusDot}></div>
+                        <div>Connesso</div>
                     </div>
-                    <div>User ID: {user_id !== "NNN" ? user_id : "N/A"}</div>
-                    <div>Server IP: lorenzogaspari.com</div>
+                    <div>IP: 192.168.1.10</div>
                     <div style={styles.powerStatus}>
                         <div>GENERAZIONE: {telemetryData.generation}</div>
                         <div>CONSUMO: {telemetryData.consumption}</div>
@@ -419,6 +407,12 @@ class DroneBoatInterface extends React.Component {
                             <div style={{fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left'}}>
                                 <JoystickReader stateapp={appst} userid={user_id} />
                             </div>
+                        </div>
+
+                        {/* Connection Monitoring */}
+                        <div style={styles.monitoringSection}>
+                            <WebSocketMonitoring />
+                            <UserIdMonitoring userid={user_id} />
                         </div>
                     </div>
                 </div>
@@ -676,6 +670,13 @@ const styles = {
         padding: '8px',
         marginBottom: '10px',
         borderRadius: '5px',
+        border: '1px solid #e0e0e0'
+    },
+    monitoringSection: {
+        backgroundColor: '#f8f9fa',
+        padding: '8px',
+        borderRadius: '5px',
+        fontSize: '11px',
         border: '1px solid #e0e0e0'
     }
 };
