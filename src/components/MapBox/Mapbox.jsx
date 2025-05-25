@@ -1,5 +1,5 @@
 
-// Ecomap.jsx
+// Ecomap.jsx puppa
 import React, { useEffect, useState, useRef, useCallback, useContext } from 'react';
 import PropTypes from 'prop-types';
 import mapboxgl from 'mapbox-gl';
