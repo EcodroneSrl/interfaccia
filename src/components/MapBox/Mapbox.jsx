@@ -1,3 +1,4 @@
+
 // Ecomap.jsx
 import React, { useEffect, useState, useRef, useCallback, useContext } from 'react';
 import PropTypes from 'prop-types';
@@ -10,7 +11,7 @@ import { WebSocketContext } from '../Websockets';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZWNvZHJvbmUiLCJhIjoiY2xnZjYzZzRxMDFjMzNkbW43Z3BsbW1yNSJ9.S2dYTcn4i6myxzNVxWmxgQ';
 
-const MapboxMap = ({ stateapp }) => {
+const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
 
     const { handleAddMarker, mapmarkers, clearMap } = useContext(MapContext);
 
@@ -25,9 +26,20 @@ const MapboxMap = ({ stateapp }) => {
     const [zoom, setZoom] = useState(9);
 
     const markerRef = useRef(null);
-   
 
-    var mapStyle = 'mapbox://styles/mapbox/streets-v11';
+    // Funzione per gestire diversi stili di mappa
+    const getMapStyle = (style) => {
+        const styles = {
+            streets: 'mapbox://styles/mapbox/streets-v11',
+            satellite: 'mapbox://styles/mapbox/satellite-v9',
+            satelliteStreets: 'mapbox://styles/mapbox/satellite-streets-v12',
+            dark: 'mapbox://styles/mapbox/dark-v10',
+            light: 'mapbox://styles/mapbox/light-v10'
+        };
+        return styles[style] || styles.satellite;
+    };
+
+    const mapStyleUrl = getMapStyle(mapStyle);
 
     useEffect(() => {
 
@@ -79,12 +91,13 @@ const MapboxMap = ({ stateapp }) => {
             }
 
             const features = map.current.queryRenderedFeatures(e.point);
-            const waterFeatures = features.filter(feature => feature.layer.id === 'water');
-
-            if (waterFeatures.length == 0) {
-                return;
-            }
-
+            
+            // Per la vista satellitare, rimuoviamo il controllo sui waterFeatures
+            // poiché i layer potrebbero avere nomi diversi
+            // const waterFeatures = features.filter(feature => feature.layer.id === 'water');
+            // if (waterFeatures.length == 0) {
+            //     return;
+            // }
 
             const { lngLat } = e;
 
@@ -101,6 +114,9 @@ const MapboxMap = ({ stateapp }) => {
                 } else {
                     handleAddMarker(lngLat);
                 }
+            } else {
+                // Permetti di aggiungere marker anche se non ci sono features
+                handleAddMarker(lngLat);
             }
         }
     }, [stateapp, handleAddMarker, map]);
@@ -113,7 +129,7 @@ const MapboxMap = ({ stateapp }) => {
         if (!map.current) {
             map.current = new mapboxgl.Map({
                 container: mapContainer.current,
-                style: mapStyle,
+                style: mapStyleUrl, // Usa il nuovo stile
                 center: [lng,lat],
                 zoom: 9,
             });
@@ -136,7 +152,7 @@ const MapboxMap = ({ stateapp }) => {
             map.current.off('click', funcOnClick);
         };
 
-    }, [stateapp, handleAddMarker, funcOnClick, mapStyle, clearMap]);
+    }, [stateapp, handleAddMarker, funcOnClick, mapStyleUrl, clearMap]);
 
     return (
         <div>
@@ -152,7 +168,8 @@ const MapboxMap = ({ stateapp }) => {
 };
 
 MapboxMap.propTypes = {
-    stateapp: PropTypes.string.isRequired
+    stateapp: PropTypes.string.isRequired,
+    mapStyle: PropTypes.string
 }
 /*MarkerList.propTypes = {
     markers: PropTypes.arrayOf(PropTypes.object).isRequired,
