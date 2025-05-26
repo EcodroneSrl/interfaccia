@@ -72,7 +72,7 @@ class DroneBoatInterface extends React.Component {
             serverIp: "192.168.1.10", // Default IP
             userId: "NNN", // Default User ID
             missionsTree: null, // Albero delle missioni
-            selectedMission: null, // Missione selezionata
+            selectedMission: null, // Missione selezionata - SEMPRE stringa o null
             missionWaypoints: null, // Waypoints della missione selezionata
             missionInfo: null, // Informazioni della missione (header)
             showMissionOnMap: false // Flag per mostrare la missione sulla mappa
@@ -310,36 +310,52 @@ class DroneBoatInterface extends React.Component {
         }
     };
 
-    // Funzione per gestire la selezione di una missione - VERSIONE SICURA
+    // Funzione per gestire la selezione di una missione - VERSIONE ULTRA-SICURA
     handleMissionSelect = (filePath) => {
         const { sendMessage } = this.context;
 
         try {
-            console.log('Selecting mission:', filePath);
+            // Controllo sicurezza: assicurati che filePath sia una stringa valida
+            if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
+                console.error('Invalid file path provided:', filePath);
+                return;
+            }
+
+            const safePath = filePath.trim();
+            console.log('Selecting mission:', safePath);
 
             // Aggiorna lo state in modo sicuro
             this.setState({
-                selectedMission: filePath,
+                selectedMission: safePath,
                 showMissionOnMap: false,
-                missionWaypoints: null
+                missionWaypoints: null,
+                missionInfo: null
             });
 
             // Richiedi i waypoint della missione selezionata
-            if (sendMessage && filePath.endsWith('.bin')) {
+            if (sendMessage && safePath.endsWith('.bin')) {
                 console.log('Requesting waypoints...');
 
-                // UN SOLO messaggio per evitare spam
                 const msgData = {
                     scope: "M",
                     type: 2,
                     id_message: "GetWaypoints",
-                    data_command: filePath.trim()
+                    data_command: safePath
                 };
 
                 sendMessage(msgData);
+            } else {
+                console.log('File is not .bin or sendMessage not available');
             }
         } catch (error) {
             console.error('Error selecting mission:', error);
+            // Reset state in caso di errore
+            this.setState({
+                selectedMission: null,
+                showMissionOnMap: false,
+                missionWaypoints: null,
+                missionInfo: null
+            });
         }
     };
 
@@ -508,11 +524,12 @@ class DroneBoatInterface extends React.Component {
                 showMissionOnMap
             } = this.state;
 
-            // Controlli di sicurezza per evitare errori
+            // Controlli di sicurezza per evitare errori - VERSIONE MIGLIORATA
             const safeAppst = appst || "STD";
             const safeUserId = user_id || "NNN";
             const safeServerIp = serverIp || "192.168.1.10";
             const safeStateUserId = userId || "NNN";
+            const safeSelectedMission = selectedMission && typeof selectedMission === 'string' ? selectedMission : null;
 
             const connectionStatus = this.getConnectionStatus();
             const energyData = this.getEnergyData();
@@ -568,43 +585,43 @@ class DroneBoatInterface extends React.Component {
 
                             <div style={styles.btnGroup}>
                                 <button
-                                    style={selectedMission ? styles.greenBtn : { ...styles.greenBtn, opacity: 0.5 }}
+                                    style={safeSelectedMission ? styles.greenBtn : { ...styles.greenBtn, opacity: 0.5 }}
                                     onClick={() => {
-                                        if (selectedMission) {
-                                            alert(`Avvio missione: ${selectedMission}`);
+                                        if (safeSelectedMission) {
+                                            alert(`Avvio missione: ${safeSelectedMission}`);
                                             // Qui puoi aggiungere la logica per avviare la missione
                                         }
                                     }}
-                                    disabled={!selectedMission}
+                                    disabled={!safeSelectedMission}
                                 >
                                     Avvia
                                 </button>
                                 <button
-                                    style={selectedMission ? styles.blueBtn : { ...styles.blueBtn, opacity: 0.5 }}
+                                    style={safeSelectedMission ? styles.blueBtn : { ...styles.blueBtn, opacity: 0.5 }}
                                     onClick={this.handleVisualizeMission}
-                                    disabled={!selectedMission}
+                                    disabled={!safeSelectedMission}
                                 >
                                     Visualizza
                                 </button>
                                 <button
-                                    style={selectedMission ? styles.redBtn : { ...styles.redBtn, opacity: 0.5 }}
+                                    style={safeSelectedMission ? styles.redBtn : { ...styles.redBtn, opacity: 0.5 }}
                                     onClick={() => {
-                                        if (selectedMission) {
-                                            alert(`Eliminazione missione: ${selectedMission}`);
+                                        if (safeSelectedMission) {
+                                            alert(`Eliminazione missione: ${safeSelectedMission}`);
                                             // Qui puoi aggiungere la logica per eliminare la missione
                                         }
                                     }}
-                                    disabled={!selectedMission}
+                                    disabled={!safeSelectedMission}
                                 >
                                     Elimina
                                 </button>
                             </div>
 
                             {/* Indicatore missione selezionata */}
-                            {selectedMission && (
+                            {safeSelectedMission && (
                                 <div style={styles.selectedMissionInfo}>
                                     <div style={{ ...styles.treeItem, backgroundColor: '#e8f5e8', color: '#2d5a2d', marginBottom: '5px' }}>
-                                        Selezionata: {selectedMission.split('/').pop()}
+                                        Selezionata: {safeSelectedMission.split('/').pop()}
                                     </div>
                                     {missionWaypoints && (
                                         <div style={{ fontSize: '12px', color: '#666', padding: '5px' }}>
@@ -676,7 +693,7 @@ class DroneBoatInterface extends React.Component {
                                     <MapboxMap
                                         stateapp={safeAppst}
                                         missionWaypoints={showMissionOnMap ? missionWaypoints : null}
-                                        selectedMission={showMissionOnMap ? selectedMission : null}
+                                        selectedMission={showMissionOnMap ? safeSelectedMission : null}
                                     />
                                 </div>
 
@@ -697,9 +714,9 @@ class DroneBoatInterface extends React.Component {
                                     <div>TEL_MODE_2 - Con mantenimento rotta</div>
                                     <div>Autonomia: 4.5h</div>
                                     <div>Distanza: 120m</div>
-                                    {showMissionOnMap && (
+                                    {showMissionOnMap && safeSelectedMission && (
                                         <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                                            Missione: {selectedMission ? selectedMission.split('/').pop() : ''}
+                                            Missione: {safeSelectedMission.split('/').pop()}
                                         </div>
                                     )}
                                 </div>
@@ -880,14 +897,14 @@ class DroneBoatInterface extends React.Component {
                         </div>
                     </div>
 
-                    {/* TABELLA MISSIONE IN FONDO ALLA PAGINA - MOSTRA SE MISSIONE SELEZIONATA */}
-                    {selectedMission && (
+                    {/* TABELLA MISSIONE IN FONDO ALLA PAGINA - CONTROLLI SICUREZZA */}
+                    {safeSelectedMission && (
                         <div style={styles.missionTable}>
                             <div style={styles.missionTableHeader}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <h3 style={{ margin: '0 0 15px 0', color: '#1a3a5a' }}>
-                                            Dettagli Missione: {selectedMission.split('/').pop().replace('.bin', '')}
+                                            Dettagli Missione: {safeSelectedMission.split('/').pop().replace('.bin', '')}
                                         </h3>
 
                                         {/* Informazioni header missione */}
@@ -946,7 +963,12 @@ class DroneBoatInterface extends React.Component {
                                         </button>
                                         <button
                                             style={{ ...styles.redBtn, fontSize: '12px', padding: '6px 12px' }}
-                                            onClick={() => this.setState({ selectedMission: null, missionWaypoints: null, missionInfo: null, showMissionOnMap: false })}
+                                            onClick={() => this.setState({
+                                                selectedMission: null,
+                                                missionWaypoints: null,
+                                                missionInfo: null,
+                                                showMissionOnMap: false
+                                            })}
                                         >
                                             ✕ Chiudi
                                         </button>
