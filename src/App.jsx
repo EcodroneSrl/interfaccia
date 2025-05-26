@@ -70,7 +70,9 @@ class DroneBoatInterface extends React.Component {
         this.state = {
             telemetryData: {},
             serverIp: "192.168.1.10", // Default IP
-            userId: "NNN" // Default User ID
+            userId: "NNN", // Default User ID
+            missionsTree: null, // Albero delle missioni
+            selectedMission: null // Missione selezionata
         };
     }
 
@@ -133,6 +135,20 @@ class DroneBoatInterface extends React.Component {
                 this.setState({ userId: skMessage.id_message });
             }
 
+            // Gestisci messaggi per le missioni
+            if (skMessage.scope === "M") {
+                if (skMessage.type === 1) {
+                    // Albero delle missioni
+                    try {
+                        const treeData = JSON.parse(skMessage.data_command);
+                        this.setState({ missionsTree: treeData });
+                    } catch (parseError) {
+                        console.error('Error parsing missions tree:', parseError);
+                    }
+                }
+            }
+
+            // Gestisci dati telemetrici
             if (skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL" && skMessage.data_command) {
                 try {
                     const hfallData = JSON.parse(skMessage.data_command);
@@ -168,6 +184,73 @@ class DroneBoatInterface extends React.Component {
         } catch (error) {
             console.error('Error refreshing missions:', error);
         }
+    };
+
+    // Funzione per gestire la selezione di una missione
+    handleMissionSelect = (filePath) => {
+        const { sendMessage } = this.context;
+
+        try {
+            this.setState({ selectedMission: filePath });
+
+            // Richiedi i waypoint della missione selezionata
+            if (sendMessage && filePath.endsWith('.bin')) {
+                const correctedPath = encodeURIComponent(filePath.trim());
+                const msgData = {
+                    scope: "M",
+                    type: 1,
+                    id_message: "NNN",
+                    data_command: correctedPath
+                };
+                sendMessage(msgData);
+            }
+        } catch (error) {
+            console.error('Error selecting mission:', error);
+        }
+    };
+
+    // Funzione per renderizzare l'albero delle missioni
+    renderMissionsTree = (node, parentPath = '', depth = 0) => {
+        if (!node) return null;
+
+        const indentStyle = {
+            paddingLeft: `${depth * 20}px`
+        };
+
+        if (node.Type === 'directory') {
+            return (
+                <div key={node.Name}>
+                    <div style={{ ...styles.treeItem, ...indentStyle }}>
+                        📁 {node.Name}
+                    </div>
+                    {node.Children && node.Children.map(child =>
+                        this.renderMissionsTree(child, `${parentPath}/${node.Name}`, depth + 1)
+                    )}
+                </div>
+            );
+        } else if (node.Type === 'file') {
+            const isSelectable = node.Name.endsWith('.bin');
+            const filePath = `${parentPath}/${node.Name}`;
+            const isSelected = this.state.selectedMission === filePath;
+
+            return (
+                <div
+                    key={node.Name}
+                    style={{
+                        ...styles.treeItem,
+                        ...indentStyle,
+                        ...(isSelected ? styles.selected : {}),
+                        cursor: isSelectable ? 'pointer' : 'default',
+                        color: isSelectable ? '#333' : '#999'
+                    }}
+                    onClick={isSelectable ? () => this.handleMissionSelect(filePath) : undefined}
+                >
+                    📄 {node.Name}
+                </div>
+            );
+        }
+
+        return null;
     };
 
     // Funzioni helper per dati sicuri
@@ -247,7 +330,7 @@ class DroneBoatInterface extends React.Component {
     render() {
         try {
             const { appst, user_id, setAppState } = this.props;
-            const { serverIp, userId } = this.state;
+            const { serverIp, userId, missionsTree, selectedMission } = this.state;
 
             // Controlli di sicurezza per evitare errori
             const safeAppst = appst || "STD";
@@ -295,16 +378,62 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.sectionTitle}>Albero Missioni</div>
                             <button style={styles.blueBtn} onClick={this.handleRefreshMissions}>Aggiorna</button>
 
-                            <div style={styles.treeItem}>/ (Root)</div>
-                            <div style={styles.treeItem}>Missioni</div>
-                            <div style={styles.treeItem}>Costiere</div>
-                            <div style={{ ...styles.treeItem, ...styles.selected }}>MB-3 | WP: 4</div>
+                            {/* Albero missioni dinamico */}
+                            <div style={styles.missionsTreeContainer}>
+                                {missionsTree ? (
+                                    this.renderMissionsTree(missionsTree)
+                                ) : (
+                                    <>
+                                        <div style={styles.treeItem}>/ (Root)</div>
+                                        <div style={styles.treeItem}>Premere "Aggiorna" per caricare</div>
+                                    </>
+                                )}
+                            </div>
 
                             <div style={styles.btnGroup}>
-                                <button style={styles.greenBtn}>Avvia</button>
-                                <button style={styles.blueBtn}>Visualizza</button>
-                                <button style={styles.redBtn}>Elimina</button>
+                                <button
+                                    style={selectedMission ? styles.greenBtn : { ...styles.greenBtn, opacity: 0.5 }}
+                                    onClick={() => {
+                                        if (selectedMission) {
+                                            alert(`Avvio missione: ${selectedMission}`);
+                                            // Qui puoi aggiungere la logica per avviare la missione
+                                        }
+                                    }}
+                                    disabled={!selectedMission}
+                                >
+                                    Avvia
+                                </button>
+                                <button
+                                    style={selectedMission ? styles.blueBtn : { ...styles.blueBtn, opacity: 0.5 }}
+                                    onClick={() => {
+                                        if (selectedMission) {
+                                            alert(`Visualizzazione missione: ${selectedMission}`);
+                                            // Qui puoi aggiungere la logica per visualizzare la missione
+                                        }
+                                    }}
+                                    disabled={!selectedMission}
+                                >
+                                    Visualizza
+                                </button>
+                                <button
+                                    style={selectedMission ? styles.redBtn : { ...styles.redBtn, opacity: 0.5 }}
+                                    onClick={() => {
+                                        if (selectedMission) {
+                                            alert(`Eliminazione missione: ${selectedMission}`);
+                                            // Qui puoi aggiungere la logica per eliminare la missione
+                                        }
+                                    }}
+                                    disabled={!selectedMission}
+                                >
+                                    Elimina
+                                </button>
                             </div>
+
+                            {selectedMission && (
+                                <div style={{ ...styles.treeItem, backgroundColor: '#e8f5e8', color: '#2d5a2d', marginBottom: '10px' }}>
+                                    Selezionata: {selectedMission.split('/').pop()}
+                                </div>
+                            )}
 
                             <div style={styles.sectionTitle}>Modalità di Guida:</div>
 
@@ -822,6 +951,11 @@ const styles = {
         padding: '8px',
         borderRadius: '4px',
         border: '1px solid #ddd',
+        marginBottom: '10px'
+    },
+    missionsTreeContainer: {
+        maxHeight: '300px',
+        overflowY: 'auto',
         marginBottom: '10px'
     }
 };
