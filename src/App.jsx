@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.css';
 import 'jquery/dist/jquery.min.js';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import { WebSocketProvider, WebSocketContext } from './components/Websockets';
+import { BoatSensorsData } from './components/BoatSensorsData';
 import { Missions } from './components/Missions/Missions';
 import { EcoMap } from './components/MultiComponents/EcoMap';
 import { ChangeAppState } from './components/StateMonitoring';
@@ -56,51 +57,13 @@ export default class App extends React.Component {
     }
 }
 
-// Componente separato che gestisce l'interfaccia e i dati telemetrici
+// Componente separato che gestisce l'interfaccia con dati semplificati
 class DroneBoatInterface extends React.Component {
     static contextType = WebSocketContext;
 
     constructor(props) {
         super(props);
-
-        this.state = {
-            telemetryData: {
-                // Posizione
-                lat: "N/A",
-                lon: "N/A",
-                alt: "N/A",
-                // Orientamento
-                pitch: "N/A",
-                roll: "N/A",
-                yaw: "N/A",
-                // Navigazione
-                speed: "N/A",
-                heading: "N/A",
-                target: "N/A",
-                // Energia
-                consumption: "N/A",
-                generation: "N/A",
-                efficiency: "N/A",
-                // Motori
-                motor1: "N/A",
-                motor2: "N/A",
-                motor3: "N/A",
-                motor4: "N/A",
-                motorAvg: "N/A",
-                // Sistema
-                temperature: "N/A",
-                humidity: "N/A",
-                autonomy: "N/A"
-            }
-        };
-    }
-
-    componentDidUpdate(prevProps, prevState) {
-        const { skMessage } = this.context;
-
-        if (skMessage && skMessage !== prevProps.skMessage) {
-            this.updateTelemetryData(skMessage);
-        }
+        this.state = {};
     }
 
     getConnectionStatus = () => {
@@ -115,72 +78,8 @@ class DroneBoatInterface extends React.Component {
         return connectionStates[wsState] || connectionStates[4];
     };
 
-    updateTelemetryData = (message) => {
-        if (!message) return;
-
-        let newTelemetryData = { ...this.state.telemetryData };
-
-        // Gestione dati HFALL
-        if (message.scope === "H" && message.type === 2 && message.id_message === "HFALL") {
-            try {
-                const hfallData = JSON.parse(message.data_command);
-
-                // Mappa i dati HFALL alle sezioni appropriate
-                if (hfallData.Lat !== undefined) newTelemetryData.lat = hfallData.Lat + "° N";
-                if (hfallData.Lon !== undefined) newTelemetryData.lon = hfallData.Lon + "° E";
-                if (hfallData.Alt !== undefined) newTelemetryData.alt = hfallData.Alt + "m";
-
-                if (hfallData.Pitch !== undefined) newTelemetryData.pitch = hfallData.Pitch + "°";
-                if (hfallData.Roll !== undefined) newTelemetryData.roll = hfallData.Roll + "°";
-                if (hfallData.Yaw !== undefined) newTelemetryData.yaw = hfallData.Yaw + "°";
-
-                if (hfallData.Speed !== undefined) newTelemetryData.speed = hfallData.Speed + " kn";
-                if (hfallData.Heading !== undefined) newTelemetryData.heading = hfallData.Heading + "°";
-                if (hfallData.Target !== undefined) newTelemetryData.target = hfallData.Target + "°";
-
-                if (hfallData.Consumption !== undefined) newTelemetryData.consumption = hfallData.Consumption + "W";
-                if (hfallData.Generation !== undefined) newTelemetryData.generation = hfallData.Generation + "W";
-                if (hfallData.Efficiency !== undefined) newTelemetryData.efficiency = hfallData.Efficiency + "%";
-
-                if (hfallData.Motor1 !== undefined) newTelemetryData.motor1 = hfallData.Motor1;
-                if (hfallData.Motor2 !== undefined) newTelemetryData.motor2 = hfallData.Motor2;
-                if (hfallData.Motor3 !== undefined) newTelemetryData.motor3 = hfallData.Motor3;
-                if (hfallData.Motor4 !== undefined) newTelemetryData.motor4 = hfallData.Motor4;
-
-                // Calcola media motori se disponibili
-                if (hfallData.Motor1 && hfallData.Motor2 && hfallData.Motor3 && hfallData.Motor4) {
-                    const avg = ((hfallData.Motor1 + hfallData.Motor2 + hfallData.Motor3 + hfallData.Motor4) / 4).toFixed(1);
-                    newTelemetryData.motorAvg = avg + " RPM";
-                }
-
-                if (hfallData.Temperature !== undefined) newTelemetryData.temperature = hfallData.Temperature + "°C";
-                if (hfallData.Humidity !== undefined) newTelemetryData.humidity = hfallData.Humidity + "%";
-                if (hfallData.Autonomy !== undefined) newTelemetryData.autonomy = hfallData.Autonomy + "h";
-
-                this.setState({ telemetryData: newTelemetryData });
-            } catch (error) {
-                console.error('Error parsing HFALL data:', error);
-            }
-        }
-
-        // Gestione dati IMU (se disponibili)
-        if (message.scope === "S" && message.type === "1" && message.id_message === "ImuData") {
-            try {
-                const imuData = JSON.parse(message.data_command);
-                if (imuData.Yaw !== undefined) newTelemetryData.yaw = imuData.Yaw + "°";
-                if (imuData.Pitch !== undefined) newTelemetryData.pitch = imuData.Pitch + "°";
-                if (imuData.Roll !== undefined) newTelemetryData.roll = imuData.Roll + "°";
-
-                this.setState({ telemetryData: newTelemetryData });
-            } catch (error) {
-                console.error('Error parsing IMU data:', error);
-            }
-        }
-    };
-
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { telemetryData } = this.state;
         const connectionStatus = this.getConnectionStatus();
 
         return (
@@ -195,8 +94,8 @@ class DroneBoatInterface extends React.Component {
                     <div>User ID: {user_id !== "NNN" ? user_id : "N/A"}</div>
                     <div>Server IP: lorenzogaspari.com</div>
                     <div style={styles.powerStatus}>
-                        <div>GENERAZIONE: {telemetryData.generation}</div>
-                        <div>CONSUMO: {telemetryData.consumption}</div>
+                        <div>GENERAZIONE: 180W</div>
+                        <div>CONSUMO: 120W</div>
                         <div style={styles.powerBar}></div>
                     </div>
                     <div style={styles.batteryPercent}>85%</div>
@@ -291,7 +190,7 @@ class DroneBoatInterface extends React.Component {
 
                             <div style={styles.mapInfoBottom}>
                                 <div>TEL_MODE_2 - Con mantenimento rotta</div>
-                                <div>Autonomia: {telemetryData.autonomy}</div>
+                                <div>Autonomia: 4.5h</div>
                                 <div>Distanza: 120m</div>
                             </div>
                         </div>
@@ -567,36 +466,6 @@ const styles = {
         backgroundColor: '#1a3a5a',
         position: 'relative',
         minHeight: '400px'
-    },
-    telemetrySection: {
-        backgroundColor: 'white',
-        marginBottom: '10px',
-        padding: '10px',
-        borderRadius: '5px',
-        border: '1px solid #e0e0e0'
-    },
-    telemetryItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        margin: '8px 0',
-        padding: '4px 0',
-        borderBottom: '1px solid #f0f0f0',
-        minHeight: '24px'
-    },
-    telemetryLabel: {
-        fontWeight: 'bold',
-        color: '#555',
-        fontSize: '13px',
-        minWidth: '80px',
-        textAlign: 'left'
-    },
-    telemetryValue: {
-        fontSize: '13px',
-        color: '#333',
-        fontWeight: '500',
-        textAlign: 'right',
-        flex: 1
     },
     waypoint: {
         position: 'absolute',
