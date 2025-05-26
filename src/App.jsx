@@ -73,6 +73,11 @@ class DroneBoatInterface extends React.Component {
                 ViraY: "N/A",
                 Gas: "N/A",
                 Ruota: "N/A"
+            },
+            orientationData: {
+                Pitch: "N/A",
+                Roll: "N/A",
+                TetaB: "N/A" // Yaw
             }
         };
     }
@@ -102,7 +107,17 @@ class DroneBoatInterface extends React.Component {
                 if (hfallData.Gas !== undefined) newJoystickData.Gas = hfallData.Gas;
                 if (hfallData.Ruota !== undefined) newJoystickData.Ruota = hfallData.Ruota;
 
-                this.setState({ joystickData: newJoystickData });
+                // Estrai i dati di orientamento
+                const newOrientationData = { ...this.state.orientationData };
+
+                if (hfallData.Pitch !== undefined) newOrientationData.Pitch = hfallData.Pitch + "°";
+                if (hfallData.Roll !== undefined) newOrientationData.Roll = hfallData.Roll + "°";
+                if (hfallData.TetaB !== undefined) newOrientationData.TetaB = hfallData.TetaB + "°";
+
+                this.setState({
+                    joystickData: newJoystickData,
+                    orientationData: newOrientationData
+                });
             } catch (error) {
                 console.error('Error parsing HFALL data:', error);
             }
@@ -111,7 +126,7 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { joystickData } = this.state;
+        const { joystickData, orientationData } = this.state;
 
         return (
             <>
@@ -257,15 +272,15 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.sectionTitle}>Orientamento</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Pitch:</span>
-                                <span style={styles.telemetryValue}>2.1°</span>
+                                <span style={styles.telemetryValue}>{orientationData.Pitch}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Roll:</span>
-                                <span style={styles.telemetryValue}>0.5°</span>
+                                <span style={styles.telemetryValue}>{orientationData.Roll}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Yaw:</span>
-                                <span style={styles.telemetryValue}>182°</span>
+                                <span style={styles.telemetryValue}>{orientationData.TetaB}</span>
                             </div>
                         </div>
 
