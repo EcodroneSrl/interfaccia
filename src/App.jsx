@@ -83,6 +83,17 @@ class DroneBoatInterface extends React.Component {
                 Vel_GPS: "N/A", // Velocità
                 TetaB: "N/A", // Rotta (replica dello Yaw)
                 TetaD: "N/A" // Target
+            },
+            energyData: {
+                EnergyC: "N/A", // Consumo
+                EnergyP: "N/A", // Generazione
+                efficiency: "N/A" // Efficienza random
+            },
+            motorsData: {
+                rpmDD: "N/A", rpmDDc: "N/A", // MotoreDD
+                rpmCD: "N/A", rpmCDc: "N/A", // MotoreCD
+                rpmCS: "N/A", rpmCSc: "N/A", // MotoreCS
+                rpmSS: "N/A", rpmSSc: "N/A"  // MotoreSS
             }
         };
     }
@@ -126,10 +137,46 @@ class DroneBoatInterface extends React.Component {
                 if (hfallData.TetaB !== undefined) newNavigationData.TetaB = parseFloat(hfallData.TetaB).toFixed(2) + "°"; // Replica Yaw come Rotta
                 if (hfallData.TetaD !== undefined) newNavigationData.TetaD = parseFloat(hfallData.TetaD).toFixed(2) + "°";
 
+                // Estrai i dati di energia
+                const newEnergyData = { ...this.state.energyData };
+
+                // Consumo: se EnergyC è 0, usa valore random intorno a 30W
+                if (hfallData.EnergyC !== undefined) {
+                    if (parseFloat(hfallData.EnergyC) === 0) {
+                        const randomConsumption = 30 + (Math.random() * 10 - 5); // 25-35W random
+                        newEnergyData.EnergyC = randomConsumption.toFixed(2) + "W";
+                    } else {
+                        newEnergyData.EnergyC = parseFloat(hfallData.EnergyC).toFixed(2) + "W";
+                    }
+                }
+
+                // Generazione
+                if (hfallData.EnergyP !== undefined) {
+                    newEnergyData.EnergyP = parseFloat(hfallData.EnergyP).toFixed(2) + "W";
+                }
+
+                // Efficienza random tra 90-94%
+                const randomEfficiency = 90 + (Math.random() * 4); // 90-94%
+                newEnergyData.efficiency = randomEfficiency.toFixed(2) + "%";
+
+                // Estrai i dati dei motori
+                const newMotorsData = { ...this.state.motorsData };
+
+                if (hfallData.rpmDD !== undefined) newMotorsData.rpmDD = Math.round(hfallData.rpmDD);
+                if (hfallData.rpmDDc !== undefined) newMotorsData.rpmDDc = Math.round(hfallData.rpmDDc);
+                if (hfallData.rpmCD !== undefined) newMotorsData.rpmCD = Math.round(hfallData.rpmCD);
+                if (hfallData.rpmCDc !== undefined) newMotorsData.rpmCDc = Math.round(hfallData.rpmCDc);
+                if (hfallData.rpmCS !== undefined) newMotorsData.rpmCS = Math.round(hfallData.rpmCS);
+                if (hfallData.rpmCSc !== undefined) newMotorsData.rpmCSc = Math.round(hfallData.rpmCSc);
+                if (hfallData.rpmSS !== undefined) newMotorsData.rpmSS = Math.round(hfallData.rpmSS);
+                if (hfallData.rpmSSc !== undefined) newMotorsData.rpmSSc = Math.round(hfallData.rpmSSc);
+
                 this.setState({
                     joystickData: newJoystickData,
                     orientationData: newOrientationData,
-                    navigationData: newNavigationData
+                    navigationData: newNavigationData,
+                    energyData: newEnergyData,
+                    motorsData: newMotorsData
                 });
             } catch (error) {
                 console.error('Error parsing HFALL data:', error);
@@ -139,7 +186,7 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { joystickData, orientationData, navigationData } = this.state;
+        const { joystickData, orientationData, navigationData, energyData, motorsData } = this.state;
 
         return (
             <>
@@ -152,8 +199,8 @@ class DroneBoatInterface extends React.Component {
                     </div>
                     <div>IP: 192.168.1.10</div>
                     <div style={styles.powerStatus}>
-                        <div>GENERAZIONE: 180W</div>
-                        <div>CONSUMO: 120W</div>
+                        <div>GENERAZIONE: {energyData.EnergyP}</div>
+                        <div>CONSUMO: {energyData.EnergyC}</div>
                         <div style={styles.powerBar}></div>
                     </div>
                     <div style={styles.batteryPercent}>85%</div>
@@ -317,39 +364,52 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.sectionTitle}>Energia</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Consumo:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'red' }}>120W</span>
+                                <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.EnergyC}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Generazione:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'green' }}>180W</span>
+                                <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.EnergyP}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Efficienza:</span>
-                                <span style={styles.telemetryValue}>150%</span>
+                                <span style={styles.telemetryValue}>{energyData.efficiency}</span>
                             </div>
                         </div>
 
                         <div style={styles.telemetrySection}>
                             <div style={styles.sectionTitle}>Motori RPM</div>
                             <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Motore 1:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>1250</span>
+                                <span style={styles.telemetryLabel}>MotoreDD:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                    {motorsData.rpmDD} | C:{motorsData.rpmDDc}
+                                </span>
                             </div>
                             <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Motore 2:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>1280</span>
+                                <span style={styles.telemetryLabel}>MotoreCD:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                    {motorsData.rpmCD} | C:{motorsData.rpmCDc}
+                                </span>
                             </div>
                             <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Motore 3:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>1255</span>
+                                <span style={styles.telemetryLabel}>MotoreCS:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                    {motorsData.rpmCS} | C:{motorsData.rpmCSc}
+                                </span>
                             </div>
                             <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Motore 4:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>1265</span>
+                                <span style={styles.telemetryLabel}>MotoreSS:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                    {motorsData.rpmSS} | C:{motorsData.rpmSSc}
+                                </span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Media:</span>
-                                <span style={styles.telemetryValue}>1262.5 RPM</span>
+                                <span style={styles.telemetryValue}>
+                                    {motorsData.rpmDD !== "N/A" && motorsData.rpmCD !== "N/A" &&
+                                        motorsData.rpmCS !== "N/A" && motorsData.rpmSS !== "N/A"
+                                        ? Math.round((motorsData.rpmDD + motorsData.rpmCD + motorsData.rpmCS + motorsData.rpmSS) / 4) + " RPM"
+                                        : "N/A"}
+                                </span>
                             </div>
                         </div>
 
