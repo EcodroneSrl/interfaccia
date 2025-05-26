@@ -88,16 +88,23 @@ class DroneBoatInterface extends React.Component {
 
     componentDidUpdate(prevProps, prevState) {
         try {
+            // EVITA LOOP INFINITI - controlla che il messaggio sia effettivamente diverso
             const currentMessage = this.context?.skMessage;
-            const prevMessage = prevProps.context?.skMessage;
+            const prevContext = prevProps.context || {};
+            const prevMessage = prevContext.skMessage;
 
-            if (currentMessage && currentMessage !== prevMessage) {
+            // Solo se il messaggio è veramente cambiato E non è lo stesso oggetto
+            if (currentMessage &&
+                currentMessage !== prevMessage &&
+                JSON.stringify(currentMessage) !== JSON.stringify(prevMessage)) {
                 this.updateData();
             }
 
+            // Aggiorna User ID solo se cambia nelle props
             if (this.props.user_id &&
                 this.props.user_id !== prevProps.user_id &&
-                this.props.user_id !== "NNN") {
+                this.props.user_id !== "NNN" &&
+                this.props.user_id !== this.state.userId) {
                 this.setState({ userId: this.props.user_id });
             }
         } catch (error) {
@@ -132,12 +139,18 @@ class DroneBoatInterface extends React.Component {
 
             if (!skMessage) return;
 
+            // Gestisci messaggi per IP del server - EVITA LOOP
             if (skMessage.scope === "U" && skMessage.type === 1 && skMessage.data_command) {
-                this.setState({ serverIp: skMessage.data_command });
+                if (this.state.serverIp !== skMessage.data_command) {
+                    this.setState({ serverIp: skMessage.data_command });
+                }
             }
 
+            // Gestisci messaggi per User ID - EVITA LOOP
             if (skMessage.scope === "U" && skMessage.type === 0 && skMessage.id_message) {
-                this.setState({ userId: skMessage.id_message });
+                if (this.state.userId !== skMessage.id_message) {
+                    this.setState({ userId: skMessage.id_message });
+                }
             }
 
             if (skMessage.scope === "M") {
@@ -146,8 +159,11 @@ class DroneBoatInterface extends React.Component {
                 if (skMessage.type === 1) {
                     try {
                         const treeData = JSON.parse(skMessage.data_command);
-                        this.setState({ missionsTree: treeData });
-                        console.log('Mission tree loaded successfully');
+                        // Solo aggiorna se diverso
+                        if (JSON.stringify(this.state.missionsTree) !== JSON.stringify(treeData)) {
+                            this.setState({ missionsTree: treeData });
+                            console.log('Mission tree loaded successfully');
+                        }
                     } catch (parseError) {
                         console.error('Error parsing missions tree:', parseError);
                     }
@@ -156,10 +172,13 @@ class DroneBoatInterface extends React.Component {
                         const waypointsData = JSON.parse(skMessage.data_command);
                         console.log('Mission waypoints received (JSON):', waypointsData.length || 'unknown count');
 
-                        this.setState(prevState => ({
-                            missionWaypoints: waypointsData,
-                            showMissionOnMap: false
-                        }));
+                        // Solo aggiorna se diverso
+                        if (JSON.stringify(this.state.missionWaypoints) !== JSON.stringify(waypointsData)) {
+                            this.setState(prevState => ({
+                                missionWaypoints: waypointsData,
+                                showMissionOnMap: false
+                            }));
+                        }
 
                     } catch (parseError) {
                         console.log('JSON parsing failed, trying CSV format...');
@@ -211,10 +230,15 @@ class DroneBoatInterface extends React.Component {
 
                                     if (waypoints.length > 0) {
                                         console.log('✅ Parsed mission CSV format:', waypoints.length, 'waypoints');
-                                        this.setState({
-                                            missionWaypoints: waypoints,
-                                            missionInfo: missionInfo
-                                        });
+
+                                        // Solo aggiorna se diverso
+                                        if (JSON.stringify(this.state.missionWaypoints) !== JSON.stringify(waypoints) ||
+                                            JSON.stringify(this.state.missionInfo) !== JSON.stringify(missionInfo)) {
+                                            this.setState({
+                                                missionWaypoints: waypoints,
+                                                missionInfo: missionInfo
+                                            });
+                                        }
                                     }
                                 }
                             } catch (csvError) {
@@ -225,12 +249,19 @@ class DroneBoatInterface extends React.Component {
                 }
             }
 
+            // Gestisci dati telemetrici - EVITA LOOP
             if (skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL" && skMessage.data_command) {
                 try {
                     const hfallData = JSON.parse(skMessage.data_command);
-                    this.setState({ telemetryData: hfallData });
+                    // Solo aggiorna se diverso (evita loop su dati simili)
+                    const currentTelemetryStr = JSON.stringify(this.state.telemetryData);
+                    const newTelemetryStr = JSON.stringify(hfallData);
+                    if (currentTelemetryStr !== newTelemetryStr) {
+                        this.setState({ telemetryData: hfallData });
+                    }
                 } catch (parseError) {
-                    console.error('Error parsing HFALL data:', parseError);
+                    // Rimuovi log di errore per evitare spam
+                    // console.error('Error parsing HFALL data:', parseError);
                 }
             }
         } catch (error) {
@@ -483,14 +514,20 @@ class DroneBoatInterface extends React.Component {
 
     // Funzione helper per verificare se una missione è valida
     isValidMission = (missionPath) => {
-        if (!missionPath || typeof missionPath !== 'string') {
+        // null, undefined, 0, false, "" sono tutti falsy
+        if (!missionPath) {
+            return false;
+        }
+
+        // Deve essere una stringa
+        if (typeof missionPath !== 'string') {
             return false;
         }
 
         const trimmed = missionPath.trim();
 
         // Escludi valori non validi
-        const invalidValues = ['', '0', 'null', 'undefined', 'NaN'];
+        const invalidValues = ['', '0', 'null', 'undefined', 'NaN', 'false'];
         if (invalidValues.includes(trimmed)) {
             return false;
         }
@@ -595,21 +632,12 @@ class DroneBoatInterface extends React.Component {
                 showMissionOnMap
             } = this.state;
 
-            // Debug log
-            console.log('=== RENDER DEBUG ===');
-            console.log('selectedMission:', selectedMission);
-            console.log('typeof selectedMission:', typeof selectedMission);
-            console.log('missionWaypoints:', missionWaypoints ? (Array.isArray(missionWaypoints) ? missionWaypoints.length + ' items' : 'not array') : 'null');
-
             // Controlli di sicurezza ULTRA-ROBUSTI
             const safeAppst = appst || "STD";
             const safeUserId = user_id || "NNN";
             const safeServerIp = serverIp || "192.168.1.10";
             const safeStateUserId = userId || "NNN";
-            const safeSelectedMission = (selectedMission && typeof selectedMission === 'string' && this.isValidMission(selectedMission)) ? selectedMission : null;
-
-            console.log('safeSelectedMission:', safeSelectedMission);
-            console.log('isValidMission result:', this.isValidMission(selectedMission));
+            const safeSelectedMission = this.isValidMission(selectedMission) ? selectedMission : null;
 
             const connectionStatus = this.getConnectionStatus();
             const energyData = this.getEnergyData();
