@@ -83,51 +83,66 @@ class DroneBoatInterface extends React.Component {
     }
 
     componentDidUpdate(prevProps) {
-        if (this.context.skMessage !== prevProps.skMessage) {
-            this.updateData();
-        }
-        // Aggiorna User ID se cambia nelle props
-        if (this.props.user_id !== prevProps.user_id && this.props.user_id !== "NNN") {
-            this.setState({ userId: this.props.user_id });
+        try {
+            if (this.context && this.context.skMessage !== (prevProps.context && prevProps.context.skMessage)) {
+                this.updateData();
+            }
+            // Aggiorna User ID se cambia nelle props
+            if (this.props.user_id && this.props.user_id !== prevProps.user_id && this.props.user_id !== "NNN") {
+                this.setState({ userId: this.props.user_id });
+            }
+        } catch (error) {
+            console.error('Error in componentDidUpdate:', error);
         }
     }
 
     getConnectionStatus = () => {
-        const { wsState } = this.context;
-        if (!wsState) return { text: "Connesso", color: "#2ecc71" };
+        try {
+            const { wsState } = this.context || {};
+            if (wsState === undefined || wsState === null) {
+                return { text: "Connesso", color: "#2ecc71" };
+            }
 
-        const connectionStates = {
-            0: { text: "Messaging...", color: "#3498db" },
-            1: { text: "Connesso", color: "#2ecc71" },
-            2: { text: "Disconnessione...", color: "#f39c12" },
-            3: { text: "Disconnesso", color: "#e74c3c" },
-            4: { text: "Non Connesso", color: "#95a5a6" }
-        };
-        return connectionStates[wsState] || connectionStates[1];
+            const connectionStates = {
+                0: { text: "Messaging...", color: "#3498db" },
+                1: { text: "Connesso", color: "#2ecc71" },
+                2: { text: "Disconnessione...", color: "#f39c12" },
+                3: { text: "Disconnesso", color: "#e74c3c" },
+                4: { text: "Non Connesso", color: "#95a5a6" }
+            };
+            return connectionStates[wsState] || connectionStates[1];
+        } catch (error) {
+            console.error('Error getting connection status:', error);
+            return { text: "Connesso", color: "#2ecc71" };
+        }
     };
 
     updateData = () => {
-        const { skMessage } = this.context;
+        try {
+            const { skMessage } = this.context;
 
-        if (!skMessage) return;
+            if (!skMessage) return;
 
-        // Gestisci messaggi per IP del server
-        if (skMessage.scope === "U" && skMessage.type === 1) {
-            this.setState({ serverIp: skMessage.data_command || "192.168.1.10" });
-        }
-
-        // Gestisci messaggi per User ID
-        if (skMessage.scope === "U" && skMessage.type === 0) {
-            this.setState({ userId: skMessage.id_message || this.props.user_id || "NNN" });
-        }
-
-        if (skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL") {
-            try {
-                const hfallData = JSON.parse(skMessage.data_command);
-                this.setState({ telemetryData: hfallData });
-            } catch (error) {
-                console.error('Error parsing HFALL data:', error);
+            // Gestisci messaggi per IP del server
+            if (skMessage.scope === "U" && skMessage.type === 1 && skMessage.data_command) {
+                this.setState({ serverIp: skMessage.data_command });
             }
+
+            // Gestisci messaggi per User ID
+            if (skMessage.scope === "U" && skMessage.type === 0 && skMessage.id_message) {
+                this.setState({ userId: skMessage.id_message });
+            }
+
+            if (skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL" && skMessage.data_command) {
+                try {
+                    const hfallData = JSON.parse(skMessage.data_command);
+                    this.setState({ telemetryData: hfallData });
+                } catch (parseError) {
+                    console.error('Error parsing HFALL data:', parseError);
+                }
+            }
+        } catch (error) {
+            console.error('Error in updateData:', error);
         }
     };
 
@@ -206,310 +221,328 @@ class DroneBoatInterface extends React.Component {
     };
 
     render() {
-        const { appst, user_id, setAppState } = this.props;
-        const { serverIp, userId } = this.state;
-        const connectionStatus = this.getConnectionStatus();
-        const energyData = this.getEnergyData();
-        const positionData = this.getPositionData();
-        const orientationData = this.getOrientationData();
-        const navigationData = this.getNavigationData();
-        const motorsData = this.getMotorsData();
-        const joystickData = this.getJoystickData();
+        try {
+            const { appst, user_id, setAppState } = this.props;
+            const { serverIp, userId } = this.state;
 
-        // Usa l'User ID dallo state o fallback alla prop
-        const displayUserId = userId !== "NNN" ? userId : (user_id !== "NNN" ? user_id : "NNN");
+            // Controlli di sicurezza per evitare errori
+            const safeAppst = appst || "STD";
+            const safeUserId = user_id || "NNN";
+            const safeServerIp = serverIp || "192.168.1.10";
+            const safeStateUserId = userId || "NNN";
 
-        return (
-            <>
-                {/* Header */}
-                <div style={styles.header}>
-                    <div style={styles.titleSection}>
-                        <div style={styles.title}>DroneBoat Control</div>
-                        <div style={styles.userId}>User ID: {displayUserId}</div>
+            const connectionStatus = this.getConnectionStatus();
+            const energyData = this.getEnergyData();
+            const positionData = this.getPositionData();
+            const orientationData = this.getOrientationData();
+            const navigationData = this.getNavigationData();
+            const motorsData = this.getMotorsData();
+            const joystickData = this.getJoystickData();
+
+            // Usa l'User ID dallo state o fallback alla prop
+            const displayUserId = safeStateUserId !== "NNN" ? safeStateUserId : safeUserId;
+
+            return (
+                <>
+                    {/* Header */}
+                    <div style={styles.header}>
+                        <div style={styles.titleSection}>
+                            <div style={styles.title}>DroneBoat Control</div>
+                            <div style={styles.userId}>User ID: {displayUserId}</div>
+                        </div>
+                        <div style={styles.statusIndicator}>
+                            <div style={{ ...styles.statusDot, backgroundColor: connectionStatus.color }}></div>
+                            <div>{connectionStatus.text}</div>
+                        </div>
+                        <div>IP: {serverIp}</div>
+                        <div style={styles.powerStatus}>
+                            <div>GENERAZIONE: {energyData.generation}</div>
+                            <div>CONSUMO: {energyData.consumption}</div>
+                            <div style={styles.powerBar}></div>
+                        </div>
+                        <div style={styles.batteryPercent}>85%</div>
+                        <div style={styles.closeBtn}>X</div>
                     </div>
-                    <div style={styles.statusIndicator}>
-                        <div style={{ ...styles.statusDot, backgroundColor: connectionStatus.color }}></div>
-                        <div>{connectionStatus.text}</div>
+
+                    {/* Container */}
+                    <div style={styles.container}>
+                        {/* Left Sidebar */}
+                        <div style={styles.sidebar}>
+                            <div style={styles.sectionTitle}>Albero Missioni</div>
+                            <button style={styles.blueBtn}>Aggiorna</button>
+
+                            <div style={styles.treeItem}>/ (Root)</div>
+                            <div style={styles.treeItem}>Missioni</div>
+                            <div style={styles.treeItem}>Costiere</div>
+                            <div style={{ ...styles.treeItem, ...styles.selected }}>MB-3 | WP: 4</div>
+
+                            <div style={styles.btnGroup}>
+                                <button style={styles.greenBtn}>Avvia</button>
+                                <button style={styles.blueBtn}>Visualizza</button>
+                                <button style={styles.redBtn}>Elimina</button>
+                            </div>
+
+                            <div style={styles.sectionTitle}>Modalità di Guida:</div>
+
+                            <div style={styles.dropdown}>
+                                <button style={styles.blueBtn}>Teleguiadata ▼</button>
+                            </div>
+
+                            <div style={styles.dropdown}>
+                                <button style={styles.greenBtn}>Autonoma ▼</button>
+                            </div>
+
+                            <button style={styles.redBtn}>INVIA</button>
+
+                            <div style={{ ...styles.sectionTitle, marginTop: '20px' }}>Crea Nuova Missione</div>
+                            <div style={styles.miniMap}>
+                                <div style={{ ...styles.waypoint, top: '30%', left: '20%' }}>1</div>
+                                <div style={{ ...styles.waypoint, top: '30%', left: '50%' }}>2</div>
+                                <div style={{ ...styles.waypoint, top: '50%', left: '80%' }}>3</div>
+                                <div style={{ ...styles.waypoint, top: '70%', left: '30%' }}>4</div>
+                            </div>
+                            <button style={styles.blueBtn}>Apri Editor</button>
+
+                            {/* State Controller */}
+                            <div style={{ marginTop: '20px' }}>
+                                <ChangeAppState changeState={setAppState} uuid={safeUserId} />
+                            </div>
+                        </div>
+
+                        {/* Main Content */}
+                        <div style={styles.mainContent}>
+                            {/* Camera View */}
+                            <div style={styles.cameraView}>
+                                <h2>Camera Principale</h2>
+                                <div style={styles.cameraOptions}>
+                                    <div style={styles.cameraOption}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                    </div>
+                                    <div style={styles.cameraOption}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
+                                    </div>
+                                    <div style={styles.cameraOption}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
+                                    </div>
+                                </div>
+                                <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
+                            </div>
+
+                            {/* Map View */}
+                            <div style={styles.mapView}>
+                                <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
+
+                                {/* MapboxMap component */}
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+                                    <MapboxMap stateapp={safeAppst} />
+                                </div>
+
+                                {/* Mission/Waypoint Forms */}
+                                {safeAppst === "MSS" && (
+                                    <div style={styles.overlayPanel}>
+                                        <Missions stateapp={safeAppst} userid={safeUserId} />
+                                    </div>
+                                )}
+                                {safeAppst === "WPY" && (
+                                    <div style={styles.overlayPanel}>
+                                        <MissionForm stateapp={safeAppst} userid={safeUserId} />
+                                        <MarkerList stateapp={safeAppst} userid={safeUserId} />
+                                    </div>
+                                )}
+
+                                <div style={styles.mapInfoBottom}>
+                                    <div>TEL_MODE_2 - Con mantenimento rotta</div>
+                                    <div>Autonomia: 4.5h</div>
+                                    <div>Distanza: 120m</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Sidebar */}
+                        <div style={styles.rightSidebar}>
+                            <div style={styles.sectionTitle}>Telemetria</div>
+
+                            {/* Boat Sensors Data */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Dati Sensori</div>
+                                <BoatSensorsData />
+                            </div>
+
+                            {/* Posizione con dati reali */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Posizione</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Lat:</span>
+                                    <span style={styles.telemetryValue}>{positionData.lat}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Lon:</span>
+                                    <span style={styles.telemetryValue}>{positionData.lon}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Altitude:</span>
+                                    <span style={styles.telemetryValue}>{positionData.altitude}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>FIX:</span>
+                                    <span style={styles.telemetryValue}>{positionData.fix}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Heading:</span>
+                                    <span style={styles.telemetryValue}>{positionData.heading}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>HeadingD:</span>
+                                    <span style={styles.telemetryValue}>{positionData.headingD}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Vel_GPS:</span>
+                                    <span style={styles.telemetryValue}>{positionData.velGPS}</span>
+                                </div>
+                            </div>
+
+                            {/* Orientamento con dati reali */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Orientamento</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Pitch:</span>
+                                    <span style={styles.telemetryValue}>{orientationData.pitch}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Roll:</span>
+                                    <span style={styles.telemetryValue}>{orientationData.roll}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Yaw:</span>
+                                    <span style={styles.telemetryValue}>{orientationData.yaw}</span>
+                                </div>
+                            </div>
+
+                            {/* Navigazione con dati reali */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Navigazione</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Velocità:</span>
+                                    <span style={styles.telemetryValue}>{navigationData.velocity}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Rotta:</span>
+                                    <span style={styles.telemetryValue}>{navigationData.course}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Target:</span>
+                                    <span style={styles.telemetryValue}>{navigationData.target}</span>
+                                </div>
+                            </div>
+
+                            {/* Energia con dati reali */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Energia</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Consumo:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.consumption}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Generazione:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.generation}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Efficienza:</span>
+                                    <span style={styles.telemetryValue}>{energyData.efficiency}</span>
+                                </div>
+                            </div>
+
+                            {/* Motori con dati reali */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Motori RPM</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreDD:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.dd.rpm} | C:{motorsData.dd.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreCD:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.cd.rpm} | C:{motorsData.cd.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreCS:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.cs.rpm} | C:{motorsData.cs.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreSS:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.ss.rpm} | C:{motorsData.ss.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Media:</span>
+                                    <span style={styles.telemetryValue}>{motorsData.average}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Stato Sistema</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Temperatura:</span>
+                                    <span style={styles.telemetryValue}>28°C</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Umidità:</span>
+                                    <span style={styles.telemetryValue}>65%</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Autonomia:</span>
+                                    <span style={styles.telemetryValue}>4.5h</span>
+                                </div>
+                            </div>
+
+                            {/* Joystick Reader con dati */}
+                            <div style={styles.joystickSection}>
+                                <div style={styles.sectionTitle}>Controllo Joystick</div>
+
+                                {/* Dati Controllo Joystick */}
+                                <div style={styles.joystickDataSection}>
+                                    <div style={styles.telemetryItem}>
+                                        <span style={styles.telemetryLabel}>BoostX:</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.boostX}</span>
+                                    </div>
+                                    <div style={styles.telemetryItem}>
+                                        <span style={styles.telemetryLabel}>ViraY:</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.viraY}</span>
+                                    </div>
+                                    <div style={styles.telemetryItem}>
+                                        <span style={styles.telemetryLabel}>Gas:</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#4CAF50' }}>{joystickData.gas}</span>
+                                    </div>
+                                    <div style={styles.telemetryItem}>
+                                        <span style={styles.telemetryLabel}>Ruota:</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#FF9800' }}>{joystickData.ruota}</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left', marginTop: '10px' }}>
+                                    <JoystickReader stateapp={safeAppst} userid={safeUserId} />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>IP: {serverIp}</div>
-                    <div style={styles.powerStatus}>
-                        <div>GENERAZIONE: {energyData.generation}</div>
-                        <div>CONSUMO: {energyData.consumption}</div>
-                        <div style={styles.powerBar}></div>
-                    </div>
-                    <div style={styles.batteryPercent}>85%</div>
-                    <div style={styles.closeBtn}>X</div>
+                </>
+            );
+        } catch (error) {
+            console.error('Error in render:', error);
+            return (
+                <div style={{ padding: '20px', color: 'red' }}>
+                    <h2>Errore di caricamento</h2>
+                    <p>Si è verificato un errore durante il caricamento dell'interfaccia.</p>
+                    <p>Errore: {error.message}</p>
                 </div>
-
-                {/* Container */}
-                <div style={styles.container}>
-                    {/* Left Sidebar */}
-                    <div style={styles.sidebar}>
-                        <div style={styles.sectionTitle}>Albero Missioni</div>
-                        <button style={styles.blueBtn}>Aggiorna</button>
-
-                        <div style={styles.treeItem}>/ (Root)</div>
-                        <div style={styles.treeItem}>Missioni</div>
-                        <div style={styles.treeItem}>Costiere</div>
-                        <div style={{ ...styles.treeItem, ...styles.selected }}>MB-3 | WP: 4</div>
-
-                        <div style={styles.btnGroup}>
-                            <button style={styles.greenBtn}>Avvia</button>
-                            <button style={styles.blueBtn}>Visualizza</button>
-                            <button style={styles.redBtn}>Elimina</button>
-                        </div>
-
-                        <div style={styles.sectionTitle}>Modalità di Guida:</div>
-
-                        <div style={styles.dropdown}>
-                            <button style={styles.blueBtn}>Teleguiadata ▼</button>
-                        </div>
-
-                        <div style={styles.dropdown}>
-                            <button style={styles.greenBtn}>Autonoma ▼</button>
-                        </div>
-
-                        <button style={styles.redBtn}>INVIA</button>
-
-                        <div style={{ ...styles.sectionTitle, marginTop: '20px' }}>Crea Nuova Missione</div>
-                        <div style={styles.miniMap}>
-                            <div style={{ ...styles.waypoint, top: '30%', left: '20%' }}>1</div>
-                            <div style={{ ...styles.waypoint, top: '30%', left: '50%' }}>2</div>
-                            <div style={{ ...styles.waypoint, top: '50%', left: '80%' }}>3</div>
-                            <div style={{ ...styles.waypoint, top: '70%', left: '30%' }}>4</div>
-                        </div>
-                        <button style={styles.blueBtn}>Apri Editor</button>
-
-                        {/* State Controller */}
-                        <div style={{ marginTop: '20px' }}>
-                            <ChangeAppState changeState={setAppState} uuid={user_id} />
-                        </div>
-                    </div>
-
-                    {/* Main Content */}
-                    <div style={styles.mainContent}>
-                        {/* Camera View */}
-                        <div style={styles.cameraView}>
-                            <h2>Camera Principale</h2>
-                            <div style={styles.cameraOptions}>
-                                <div style={styles.cameraOption}>
-                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
-                                </div>
-                                <div style={styles.cameraOption}>
-                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
-                                </div>
-                                <div style={styles.cameraOption}>
-                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
-                                </div>
-                            </div>
-                            <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
-                        </div>
-
-                        {/* Map View */}
-                        <div style={styles.mapView}>
-                            <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
-
-                            {/* MapboxMap component */}
-                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
-                                <MapboxMap stateapp={appst} />
-                            </div>
-
-                            {/* Mission/Waypoint Forms */}
-                            {appst === "MSS" && (
-                                <div style={styles.overlayPanel}>
-                                    <Missions stateapp={appst} userid={user_id} />
-                                </div>
-                            )}
-                            {appst === "WPY" && (
-                                <div style={styles.overlayPanel}>
-                                    <MissionForm stateapp={appst} userid={user_id} />
-                                    <MarkerList stateapp={appst} userid={user_id} />
-                                </div>
-                            )}
-
-                            <div style={styles.mapInfoBottom}>
-                                <div>TEL_MODE_2 - Con mantenimento rotta</div>
-                                <div>Autonomia: 4.5h</div>
-                                <div>Distanza: 120m</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Sidebar */}
-                    <div style={styles.rightSidebar}>
-                        <div style={styles.sectionTitle}>Telemetria</div>
-
-                        {/* Boat Sensors Data */}
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Dati Sensori</div>
-                            <BoatSensorsData />
-                        </div>
-
-                        {/* Posizione con dati reali */}
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Posizione</div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Lat:</span>
-                                <span style={styles.telemetryValue}>{positionData.lat}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Lon:</span>
-                                <span style={styles.telemetryValue}>{positionData.lon}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Altitude:</span>
-                                <span style={styles.telemetryValue}>{positionData.altitude}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>FIX:</span>
-                                <span style={styles.telemetryValue}>{positionData.fix}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Heading:</span>
-                                <span style={styles.telemetryValue}>{positionData.heading}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>HeadingD:</span>
-                                <span style={styles.telemetryValue}>{positionData.headingD}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Vel_GPS:</span>
-                                <span style={styles.telemetryValue}>{positionData.velGPS}</span>
-                            </div>
-                        </div>
-
-                        {/* Orientamento con dati reali */}
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Orientamento</div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Pitch:</span>
-                                <span style={styles.telemetryValue}>{orientationData.pitch}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Roll:</span>
-                                <span style={styles.telemetryValue}>{orientationData.roll}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Yaw:</span>
-                                <span style={styles.telemetryValue}>{orientationData.yaw}</span>
-                            </div>
-                        </div>
-
-                        {/* Navigazione con dati reali */}
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Navigazione</div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Velocità:</span>
-                                <span style={styles.telemetryValue}>{navigationData.velocity}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Rotta:</span>
-                                <span style={styles.telemetryValue}>{navigationData.course}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Target:</span>
-                                <span style={styles.telemetryValue}>{navigationData.target}</span>
-                            </div>
-                        </div>
-
-                        {/* Energia con dati reali */}
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Energia</div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Consumo:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.consumption}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Generazione:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.generation}</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Efficienza:</span>
-                                <span style={styles.telemetryValue}>{energyData.efficiency}</span>
-                            </div>
-                        </div>
-
-                        {/* Motori con dati reali */}
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Motori RPM</div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>MotoreDD:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.dd.rpm} | C:{motorsData.dd.cmd}
-                                </span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>MotoreCD:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.cd.rpm} | C:{motorsData.cd.cmd}
-                                </span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>MotoreCS:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.cs.rpm} | C:{motorsData.cs.cmd}
-                                </span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>MotoreSS:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.ss.rpm} | C:{motorsData.ss.cmd}
-                                </span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Media:</span>
-                                <span style={styles.telemetryValue}>{motorsData.average}</span>
-                            </div>
-                        </div>
-
-                        <div style={styles.telemetrySection}>
-                            <div style={styles.sectionTitle}>Stato Sistema</div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Temperatura:</span>
-                                <span style={styles.telemetryValue}>28°C</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Umidità:</span>
-                                <span style={styles.telemetryValue}>65%</span>
-                            </div>
-                            <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Autonomia:</span>
-                                <span style={styles.telemetryValue}>4.5h</span>
-                            </div>
-                        </div>
-
-                        {/* Joystick Reader con dati */}
-                        <div style={styles.joystickSection}>
-                            <div style={styles.sectionTitle}>Controllo Joystick</div>
-
-                            {/* Dati Controllo Joystick */}
-                            <div style={styles.joystickDataSection}>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>BoostX:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.boostX}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>ViraY:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.viraY}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Gas:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#4CAF50' }}>{joystickData.gas}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Ruota:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#FF9800' }}>{joystickData.ruota}</span>
-                                </div>
-                            </div>
-
-                            <div style={{ fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left', marginTop: '10px' }}>
-                                <JoystickReader stateapp={appst} userid={user_id} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </>
-        );
+            );
+        }
     }
 }
 
