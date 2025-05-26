@@ -68,17 +68,27 @@ class DroneBoatInterface extends React.Component {
         super(props);
 
         this.state = {
-            telemetryData: {}
+            telemetryData: {},
+            serverIp: "192.168.1.10", // Default IP
+            userId: "NNN" // Default User ID
         };
     }
 
     componentDidMount() {
         this.updateData();
+        // Inizializza con l'User ID dalla prop
+        if (this.props.user_id && this.props.user_id !== "NNN") {
+            this.setState({ userId: this.props.user_id });
+        }
     }
 
     componentDidUpdate(prevProps) {
         if (this.context.skMessage !== prevProps.skMessage) {
             this.updateData();
+        }
+        // Aggiorna User ID se cambia nelle props
+        if (this.props.user_id !== prevProps.user_id && this.props.user_id !== "NNN") {
+            this.setState({ userId: this.props.user_id });
         }
     }
 
@@ -99,7 +109,19 @@ class DroneBoatInterface extends React.Component {
     updateData = () => {
         const { skMessage } = this.context;
 
-        if (skMessage && skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL") {
+        if (!skMessage) return;
+
+        // Gestisci messaggi per IP del server
+        if (skMessage.scope === "U" && skMessage.type === 1) {
+            this.setState({ serverIp: skMessage.data_command || "192.168.1.10" });
+        }
+
+        // Gestisci messaggi per User ID
+        if (skMessage.scope === "U" && skMessage.type === 0) {
+            this.setState({ userId: skMessage.id_message || this.props.user_id || "NNN" });
+        }
+
+        if (skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL") {
             try {
                 const hfallData = JSON.parse(skMessage.data_command);
                 this.setState({ telemetryData: hfallData });
@@ -185,6 +207,7 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         const { appst, user_id, setAppState } = this.props;
+        const { serverIp, userId } = this.state;
         const connectionStatus = this.getConnectionStatus();
         const energyData = this.getEnergyData();
         const positionData = this.getPositionData();
@@ -193,19 +216,22 @@ class DroneBoatInterface extends React.Component {
         const motorsData = this.getMotorsData();
         const joystickData = this.getJoystickData();
 
+        // Usa l'User ID dallo state o fallback alla prop
+        const displayUserId = userId !== "NNN" ? userId : (user_id !== "NNN" ? user_id : "NNN");
+
         return (
             <>
                 {/* Header */}
                 <div style={styles.header}>
                     <div style={styles.titleSection}>
                         <div style={styles.title}>DroneBoat Control</div>
-                        <div style={styles.userId}>User ID: {user_id}</div>
+                        <div style={styles.userId}>User ID: {displayUserId}</div>
                     </div>
                     <div style={styles.statusIndicator}>
                         <div style={{ ...styles.statusDot, backgroundColor: connectionStatus.color }}></div>
                         <div>{connectionStatus.text}</div>
                     </div>
-                    <div>IP: lorenzogaspari.com</div>
+                    <div>IP: {serverIp}</div>
                     <div style={styles.powerStatus}>
                         <div>GENERAZIONE: {energyData.generation}</div>
                         <div>CONSUMO: {energyData.consumption}</div>
