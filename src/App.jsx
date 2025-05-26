@@ -131,13 +131,6 @@ export default class App extends React.Component {
                                 {/* Map View */}
                                 <div style={styles.mapView}>
                                     <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
-                                    <div style={styles.mapControls}>
-                                        <div style={styles.zoomControl}>
-                                            <span>Zoom</span>
-                                            <input type="range" min="1" max="100" defaultValue="50" />
-                                        </div>
-                                        <button style={styles.blueBtn}>Centra</button>
-                                    </div>
 
                                     {/* MapboxMap component */}
                                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
@@ -449,20 +442,6 @@ const styles = {
         backgroundColor: '#1a3a5a',
         position: 'relative',
         minHeight: '400px'
-    },
-    mapControls: {
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        backgroundColor: 'white',
-        padding: '10px',
-        borderRadius: '5px',
-        zIndex: 10
-    },
-    zoomControl: {
-        display: 'flex',
-        alignItems: 'center',
-        marginBottom: '5px'
     },
     telemetrySection: {
         backgroundColor: 'white',
