@@ -263,23 +263,30 @@ class DroneBoatInterface extends React.Component {
         const { sendMessage } = this.context;
 
         try {
+            console.log('=== MISSION SELECT DEBUG ===');
+            console.log('filePath received:', filePath);
+            console.log('filePath type:', typeof filePath);
+
             if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
-                console.error('Invalid file path provided:', filePath);
+                console.error('❌ Invalid file path provided:', filePath);
                 return;
             }
 
             const safePath = filePath.trim();
-            console.log('Selecting mission:', safePath);
+            console.log('✅ Safe path:', safePath);
+            console.log('✅ Path is valid mission:', this.isValidMission(safePath));
 
             this.setState({
                 selectedMission: safePath,
                 showMissionOnMap: false,
                 missionWaypoints: null,
                 missionInfo: null
+            }, () => {
+                console.log('✅ State updated, selectedMission now:', this.state.selectedMission);
             });
 
             if (sendMessage && safePath.endsWith('.bin')) {
-                console.log('Requesting waypoints...');
+                console.log('✅ Sending WebSocket message for waypoints...');
 
                 const msgData = {
                     scope: "M",
@@ -289,9 +296,12 @@ class DroneBoatInterface extends React.Component {
                 };
 
                 sendMessage(msgData);
+                console.log('✅ WebSocket message sent:', msgData);
+            } else {
+                console.log('⚠️ No WebSocket message sent - sendMessage available:', !!sendMessage, 'ends with .bin:', safePath.endsWith('.bin'));
             }
         } catch (error) {
-            console.error('Error selecting mission:', error);
+            console.error('❌ Error selecting mission:', error);
             this.setState({
                 selectedMission: null,
                 showMissionOnMap: false,
@@ -447,13 +457,129 @@ class DroneBoatInterface extends React.Component {
 
     // Funzione helper per ottenere il nome della missione in modo sicuro
     getMissionName = (missionPath) => {
-        if (!missionPath || typeof missionPath !== 'string') {
+        if (!missionPath || typeof missionPath !== 'string' || missionPath.trim() === '') {
             return 'Sconosciuta';
         }
         try {
-            return missionPath.split('/').pop().replace('.bin', '');
+            const trimmedPath = missionPath.trim();
+            if (trimmedPath === '0' || trimmedPath === 'null' || trimmedPath === 'undefined') {
+                return 'Sconosciuta';
+            }
+
+            // Se contiene "/", prendi l'ultima parte
+            if (trimmedPath.includes('/')) {
+                const parts = trimmedPath.split('/');
+                const fileName = parts[parts.length - 1];
+                return fileName.replace('.bin', '');
+            }
+
+            // Altrimenti usa il path diretto
+            return trimmedPath.replace('.bin', '');
         } catch (error) {
+            console.error('Error in getMissionName:', error);
             return 'Sconosciuta';
+        }
+    };
+
+    // Funzione helper per verificare se una missione è valida
+    isValidMission = (missionPath) => {
+        if (!missionPath || typeof missionPath !== 'string') {
+            return false;
+        }
+
+        const trimmed = missionPath.trim();
+
+        // Escludi valori non validi
+        const invalidValues = ['', '0', 'null', 'undefined', 'NaN'];
+        if (invalidValues.includes(trimmed)) {
+            return false;
+        }
+
+        // Deve contenere caratteri validi
+        return trimmed.length > 0 && trimmed !== 'Sconosciuta';
+    };
+
+    // Funzione per caricare waypoints di test
+    loadTestWaypoints = () => {
+        try {
+            console.log('Loading test waypoints...');
+
+            const testWaypoints = [
+                {
+                    nmissione: 0,
+                    indexWP: 0,
+                    latitude: 44.126474,
+                    longitude: 9.933195,
+                    navMode: 5,
+                    pointType: 0,
+                    monitoringOp: 0,
+                    arriveMode: 0,
+                    waypointRadius: 0.00009,
+                    lat: 44.126474,
+                    lng: 9.933195
+                },
+                {
+                    nmissione: 0,
+                    indexWP: 1,
+                    latitude: 44.125963,
+                    longitude: 9.934199,
+                    navMode: 5,
+                    pointType: 0,
+                    monitoringOp: 0,
+                    arriveMode: 0,
+                    waypointRadius: 0.00009,
+                    lat: 44.125963,
+                    lng: 9.934199
+                },
+                {
+                    nmissione: 0,
+                    indexWP: 2,
+                    latitude: 44.125549,
+                    longitude: 9.935042,
+                    navMode: 5,
+                    pointType: 0,
+                    monitoringOp: 0,
+                    arriveMode: 0,
+                    waypointRadius: 0.00009,
+                    lat: 44.125549,
+                    lng: 9.935042
+                },
+                {
+                    nmissione: 0,
+                    indexWP: 3,
+                    latitude: 44.124713,
+                    longitude: 9.936800,
+                    navMode: 5,
+                    pointType: 0,
+                    monitoringOp: 0,
+                    arriveMode: 0,
+                    waypointRadius: 0.00009,
+                    lat: 44.124713,
+                    lng: 9.936800
+                }
+            ];
+
+            const testMissionInfo = {
+                idMission: "provaWPMissioneasfaltoRbig",
+                nMission: 0,
+                total_mission_nWP: 9,
+                wpStart: 1,
+                cycles: 3,
+                wpEnd: 8,
+                standRadius: 0.00004
+            };
+
+            this.setState({
+                missionWaypoints: testWaypoints,
+                missionInfo: testMissionInfo,
+                showMissionOnMap: true
+            }, () => {
+                console.log('✅ Test waypoints loaded successfully:', testWaypoints.length, 'waypoints');
+            });
+
+        } catch (error) {
+            console.error('Error loading test waypoints:', error);
+            alert('Errore durante il caricamento dei waypoints di test: ' + error.message);
         }
     };
 
@@ -469,12 +595,21 @@ class DroneBoatInterface extends React.Component {
                 showMissionOnMap
             } = this.state;
 
+            // Debug log
+            console.log('=== RENDER DEBUG ===');
+            console.log('selectedMission:', selectedMission);
+            console.log('typeof selectedMission:', typeof selectedMission);
+            console.log('missionWaypoints:', missionWaypoints ? (Array.isArray(missionWaypoints) ? missionWaypoints.length + ' items' : 'not array') : 'null');
+
             // Controlli di sicurezza ULTRA-ROBUSTI
             const safeAppst = appst || "STD";
             const safeUserId = user_id || "NNN";
             const safeServerIp = serverIp || "192.168.1.10";
             const safeStateUserId = userId || "NNN";
-            const safeSelectedMission = (selectedMission && typeof selectedMission === 'string') ? selectedMission : null;
+            const safeSelectedMission = (selectedMission && typeof selectedMission === 'string' && this.isValidMission(selectedMission)) ? selectedMission : null;
+
+            console.log('safeSelectedMission:', safeSelectedMission);
+            console.log('isValidMission result:', this.isValidMission(selectedMission));
 
             const connectionStatus = this.getConnectionStatus();
             const energyData = this.getEnergyData();
@@ -827,8 +962,8 @@ class DroneBoatInterface extends React.Component {
                         </div>
                     </div>
 
-                    {/* TABELLA MISSIONE - COMPLETAMENTE SICURA */}
-                    {safeSelectedMission && (
+                    {/* TABELLA MISSIONE - COMPLETAMENTE SICURA CON DEBUG */}
+                    {safeSelectedMission ? (
                         <div style={styles.missionTable}>
                             <div style={styles.missionTableHeader}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -836,6 +971,11 @@ class DroneBoatInterface extends React.Component {
                                         <h3 style={{ margin: '0 0 15px 0', color: '#1a3a5a' }}>
                                             Dettagli Missione: {this.getMissionName(safeSelectedMission)}
                                         </h3>
+
+                                        {/* DEBUG INFO */}
+                                        <div style={{ fontSize: '10px', color: '#999', marginBottom: '5px' }}>
+                                            Debug: selectedMission="{selectedMission}", safe="{safeSelectedMission}", valid={this.isValidMission(selectedMission) ? 'Yes' : 'No'}
+                                        </div>
 
                                         {this.state.missionInfo && (
                                             <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px', backgroundColor: '#f8f9fa', padding: '8px', borderRadius: '4px' }}>
@@ -863,28 +1003,7 @@ class DroneBoatInterface extends React.Component {
                                     <div style={{ display: 'flex', gap: '10px' }}>
                                         <button
                                             style={{ ...styles.blueBtn, fontSize: '12px', padding: '6px 12px' }}
-                                            onClick={() => {
-                                                const testWaypoints = [
-                                                    { nmissione: 0, indexWP: 0, latitude: 44.126474, longitude: 9.933195, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.126474, lng: 9.933195 },
-                                                    { nmissione: 0, indexWP: 1, latitude: 44.125963, longitude: 9.934199, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.125963, lng: 9.934199 },
-                                                    { nmissione: 0, indexWP: 2, latitude: 44.125549, longitude: 9.935042, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.125549, lng: 9.935042 },
-                                                    { nmissione: 0, indexWP: 3, latitude: 44.124713, longitude: 9.936800, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.124713, lng: 9.936800 }
-                                                ];
-                                                const testMissionInfo = {
-                                                    idMission: "provaWPMissioneasfaltoRbig",
-                                                    nMission: 0,
-                                                    total_mission_nWP: 9,
-                                                    wpStart: 1,
-                                                    cycles: 3,
-                                                    wpEnd: 8,
-                                                    standRadius: 0.00004
-                                                };
-                                                this.setState({
-                                                    missionWaypoints: testWaypoints,
-                                                    missionInfo: testMissionInfo,
-                                                    showMissionOnMap: true
-                                                });
-                                            }}
+                                            onClick={this.loadTestWaypoints}
                                         >
                                             🧪 Test Waypoints
                                         </button>
@@ -989,6 +1108,26 @@ class DroneBoatInterface extends React.Component {
                                 )}
                             </div>
                         </div>
+                    ) : (
+                        // DEBUG: mostra perché la tabella non appare
+                        selectedMission && (
+                            <div style={{
+                                position: 'fixed',
+                                bottom: '10px',
+                                right: '10px',
+                                backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                                padding: '10px',
+                                borderRadius: '5px',
+                                fontSize: '12px',
+                                maxWidth: '300px',
+                                zIndex: 999
+                            }}>
+                                <strong>🐛 DEBUG:</strong> Missione selezionata ma non valida<br />
+                                Raw: "{selectedMission}"<br />
+                                Tipo: {typeof selectedMission}<br />
+                                Valida: {this.isValidMission(selectedMission) ? 'Si' : 'No'}
+                            </div>
+                        )
                     )}
                 </>
             );
