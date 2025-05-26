@@ -146,6 +146,30 @@ class DroneBoatInterface extends React.Component {
         }
     };
 
+    // Funzione per gestire il click su "Aggiorna" nell'albero missioni
+    handleRefreshMissions = () => {
+        const { setAppState } = this.props;
+        const { sendMessage } = this.context;
+
+        try {
+            // Cambia lo stato dell'app a "MSS" per mostrare le missioni
+            setAppState("MSS");
+
+            // Invia il messaggio WebSocket per caricare l'albero delle missioni
+            if (sendMessage) {
+                const msgData = {
+                    scope: "M",
+                    type: 0,
+                    id_message: "DList",
+                    data_command: "NNN"
+                };
+                sendMessage(msgData);
+            }
+        } catch (error) {
+            console.error('Error refreshing missions:', error);
+        }
+    };
+
     // Funzioni helper per dati sicuri
     getEnergyData = () => {
         const { telemetryData } = this.state;
@@ -269,7 +293,7 @@ class DroneBoatInterface extends React.Component {
                         {/* Left Sidebar */}
                         <div style={styles.sidebar}>
                             <div style={styles.sectionTitle}>Albero Missioni</div>
-                            <button style={styles.blueBtn}>Aggiorna</button>
+                            <button style={styles.blueBtn} onClick={this.handleRefreshMissions}>Aggiorna</button>
 
                             <div style={styles.treeItem}>/ (Root)</div>
                             <div style={styles.treeItem}>Missioni</div>
