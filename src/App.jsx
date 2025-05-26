@@ -78,6 +78,11 @@ class DroneBoatInterface extends React.Component {
                 Pitch: "N/A",
                 Roll: "N/A",
                 TetaB: "N/A" // Yaw
+            },
+            navigationData: {
+                Vel_GPS: "N/A", // Velocità
+                TetaB: "N/A", // Rotta (replica dello Yaw)
+                TetaD: "N/A" // Target
             }
         };
     }
@@ -107,16 +112,24 @@ class DroneBoatInterface extends React.Component {
                 if (hfallData.Gas !== undefined) newJoystickData.Gas = hfallData.Gas;
                 if (hfallData.Ruota !== undefined) newJoystickData.Ruota = hfallData.Ruota;
 
-                // Estrai i dati di orientamento
+                // Estrai i dati di orientamento (con 2 decimali)
                 const newOrientationData = { ...this.state.orientationData };
 
-                if (hfallData.Pitch !== undefined) newOrientationData.Pitch = hfallData.Pitch + "°";
-                if (hfallData.Roll !== undefined) newOrientationData.Roll = hfallData.Roll + "°";
-                if (hfallData.TetaB !== undefined) newOrientationData.TetaB = hfallData.TetaB + "°";
+                if (hfallData.Pitch !== undefined) newOrientationData.Pitch = parseFloat(hfallData.Pitch).toFixed(2) + "°";
+                if (hfallData.Roll !== undefined) newOrientationData.Roll = parseFloat(hfallData.Roll).toFixed(2) + "°";
+                if (hfallData.TetaB !== undefined) newOrientationData.TetaB = parseFloat(hfallData.TetaB).toFixed(2) + "°";
+
+                // Estrai i dati di navigazione
+                const newNavigationData = { ...this.state.navigationData };
+
+                if (hfallData.Vel_GPS !== undefined) newNavigationData.Vel_GPS = parseFloat(hfallData.Vel_GPS).toFixed(2) + " kn";
+                if (hfallData.TetaB !== undefined) newNavigationData.TetaB = parseFloat(hfallData.TetaB).toFixed(2) + "°"; // Replica Yaw come Rotta
+                if (hfallData.TetaD !== undefined) newNavigationData.TetaD = parseFloat(hfallData.TetaD).toFixed(2) + "°";
 
                 this.setState({
                     joystickData: newJoystickData,
-                    orientationData: newOrientationData
+                    orientationData: newOrientationData,
+                    navigationData: newNavigationData
                 });
             } catch (error) {
                 console.error('Error parsing HFALL data:', error);
@@ -126,7 +139,7 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { joystickData, orientationData } = this.state;
+        const { joystickData, orientationData, navigationData } = this.state;
 
         return (
             <>
@@ -288,15 +301,15 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.sectionTitle}>Navigazione</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Velocità:</span>
-                                <span style={styles.telemetryValue}>3.2 kn</span>
+                                <span style={styles.telemetryValue}>{navigationData.Vel_GPS}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Rotta:</span>
-                                <span style={styles.telemetryValue}>182°</span>
+                                <span style={styles.telemetryValue}>{navigationData.TetaB}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Target:</span>
-                                <span style={styles.telemetryValue}>20°</span>
+                                <span style={styles.telemetryValue}>{navigationData.TetaD}</span>
                             </div>
                         </div>
 
