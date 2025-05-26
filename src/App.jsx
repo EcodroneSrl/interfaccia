@@ -74,6 +74,7 @@ class DroneBoatInterface extends React.Component {
             missionsTree: null, // Albero delle missioni
             selectedMission: null, // Missione selezionata
             missionWaypoints: null, // Waypoints della missione selezionata
+            missionInfo: null, // Informazioni della missione (header)
             showMissionOnMap: false // Flag per mostrare la missione sulla mappa
         };
     }
@@ -86,13 +87,20 @@ class DroneBoatInterface extends React.Component {
         }
     }
 
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps, prevState) {
         try {
-            if (this.context && this.context.skMessage !== (prevProps.context && prevProps.context.skMessage)) {
+            // Evita loop infiniti controllando che il messaggio sia effettivamente cambiato
+            const currentMessage = this.context?.skMessage;
+            const prevMessage = prevProps.context?.skMessage;
+
+            if (currentMessage && currentMessage !== prevMessage) {
                 this.updateData();
             }
-            // Aggiorna User ID se cambia nelle props
-            if (this.props.user_id && this.props.user_id !== prevProps.user_id && this.props.user_id !== "NNN") {
+
+            // Aggiorna User ID se cambia nelle props (non nello state per evitare loop)
+            if (this.props.user_id &&
+                this.props.user_id !== prevProps.user_id &&
+                this.props.user_id !== "NNN") {
                 this.setState({ userId: this.props.user_id });
             }
         } catch (error) {
@@ -137,7 +145,7 @@ class DroneBoatInterface extends React.Component {
                 this.setState({ userId: skMessage.id_message });
             }
 
-            // Gestisci messaggi per le missioni - VERSIONE SICURA
+            // Gestisci messaggi per le missioni - VERSIONE MIGLIORATA
             if (skMessage.scope === "M") {
                 console.log('Mission message received - Type:', skMessage.type);
 
@@ -153,22 +161,86 @@ class DroneBoatInterface extends React.Component {
                 } else if (skMessage.type === 2) {
                     // Waypoints della missione
                     try {
+                        // Prima prova parsing JSON
                         const waypointsData = JSON.parse(skMessage.data_command);
-                        console.log('Mission waypoints received:', waypointsData.length || 'unknown count');
+                        console.log('Mission waypoints received (JSON):', waypointsData.length || 'unknown count');
 
-                        // Aggiorna in modo sicuro
                         this.setState(prevState => ({
                             missionWaypoints: waypointsData,
-                            showMissionOnMap: false // Non attivare automaticamente
+                            showMissionOnMap: false
                         }));
 
                     } catch (parseError) {
-                        console.error('Error parsing waypoints:', parseError);
+                        console.log('JSON parsing failed, trying CSV format...');
                         console.log('Raw data:', skMessage.data_command);
 
-                        // Tentativo di parsing alternativo semplificato
-                        if (typeof skMessage.data_command === 'string' && skMessage.data_command.includes(',')) {
+                        // Parsing formato CSV della missione
+                        if (typeof skMessage.data_command === 'string') {
                             try {
+                                const lines = skMessage.data_command.split('\n').filter(line => line.trim());
+                                console.log('Lines found:', lines.length);
+
+                                if (lines.length > 0) {
+                                    // Prima riga: header della missione
+                                    const missionHeaderParts = lines[0].split(',');
+                                    const missionInfo = {
+                                        idMission: missionHeaderParts[0] || '',
+                                        nMission: parseInt(missionHeaderParts[1]) || 0,
+                                        total_mission_nWP: parseInt(missionHeaderParts[2]) || 0,
+                                        wpStart: parseInt(missionHeaderParts[3]) || 0,
+                                        cycles: parseInt(missionHeaderParts[4]) || 0,
+                                        wpEnd: parseInt(missionHeaderParts[5]) || 0,
+                                        NMmode: parseInt(missionHeaderParts[6]) || 0,
+                                        NMnum: parseInt(missionHeaderParts[7]) || 0,
+                                        NMStartInd: parseInt(missionHeaderParts[8]) || 0,
+                                        idMissionNext: parseInt(missionHeaderParts[9]) || 0,
+                                        standRadius: parseFloat(missionHeaderParts[10]) || 0
+                                    };
+
+                                    // Righe successive: waypoints
+                                    const waypoints = [];
+                                    for (let i = 1; i < lines.length; i++) {
+                                        const parts = lines[i].split(',').map(p => p.trim());
+                                        if (parts.length >= 9) {
+                                            const waypoint = {
+                                                nmissione: parseInt(parts[0]) || 0,
+                                                indexWP: parseInt(parts[1]) || 0,
+                                                latitude: parseFloat(parts[2]) || 0,
+                                                longitude: parseFloat(parts[3]) || 0,
+                                                navMode: parseInt(parts[4]) || 0,
+                                                pointType: parseInt(parts[5]) || 0,
+                                                monitoringOp: parseInt(parts[6]) || 0,
+                                                arriveMode: parseInt(parts[7]) || 0,
+                                                waypointRadius: parseFloat(parts[8]) || 0,
+                                                // Mappatura per compatibilità con MapBox
+                                                lat: parseFloat(parts[2]) || 0,
+                                                lng: parseFloat(parts[3]) || 0
+                                            };
+
+                                            // Verifica coordinate valide
+                                            if (!isNaN(waypoint.latitude) && !isNaN(waypoint.longitude) &&
+                                                waypoint.latitude !== 0 && waypoint.longitude !== 0) {
+                                                waypoints.push(waypoint);
+                                            }
+                                        }
+                                    }
+
+                                    if (waypoints.length > 0) {
+                                        console.log('✅ Parsed mission CSV format:', waypoints.length, 'waypoints');
+                                        console.log('Mission info:', missionInfo);
+
+                                        this.setState({
+                                            missionWaypoints: waypoints,
+                                            missionInfo: missionInfo // Salva anche le info della missione
+                                        });
+                                    } else {
+                                        console.log('❌ No valid waypoints found in CSV data');
+                                    }
+                                }
+                            } catch (csvError) {
+                                console.error('❌ Failed to parse CSV format:', csvError);
+
+                                // Fallback: parsing semplificato
                                 const lines = skMessage.data_command.split('\n').filter(line => line.trim());
                                 const waypoints = [];
 
@@ -181,6 +253,8 @@ class DroneBoatInterface extends React.Component {
                                             waypoints.push({
                                                 lat: lat,
                                                 lng: lng,
+                                                latitude: lat,
+                                                longitude: lng,
                                                 alt: parts.length > 2 ? parseFloat(parts[2]) || 0 : 0,
                                                 index: index
                                             });
@@ -189,11 +263,9 @@ class DroneBoatInterface extends React.Component {
                                 });
 
                                 if (waypoints.length > 0) {
-                                    console.log('Parsed as CSV format:', waypoints.length, 'waypoints');
+                                    console.log('✅ Fallback parsing successful:', waypoints.length, 'waypoints');
                                     this.setState({ missionWaypoints: waypoints });
                                 }
-                            } catch (csvError) {
-                                console.error('Failed to parse as CSV:', csvError);
                             }
                         }
                     }
@@ -271,24 +343,29 @@ class DroneBoatInterface extends React.Component {
         }
     };
 
-    // Funzione per visualizzare la missione sulla mappa - VERSIONE SICURA
+    // Funzione per visualizzare la missione sulla mappa - VERSIONE MIGLIORATA
     handleVisualizeMission = () => {
         const { selectedMission, missionWaypoints } = this.state;
 
         try {
-            console.log('Visualizing mission:', selectedMission);
+            console.log('=== VISUALIZE MISSION ===');
+            console.log('Selected Mission:', selectedMission);
             console.log('Waypoints available:', !!missionWaypoints);
+            console.log('Waypoints count:', Array.isArray(missionWaypoints) ? missionWaypoints.length : 'Not array');
 
-            if (selectedMission && missionWaypoints) {
-                // Mostra la missione sulla mappa SENZA cambiare appState
-                this.setState({ showMissionOnMap: true }, () => {
-                    console.log('Mission visualization activated successfully');
-                });
-            } else if (selectedMission && !missionWaypoints) {
-                alert('Caricando waypoints della missione...');
-                // Non richiamare handleMissionSelect per evitare loop
+            if (selectedMission) {
+                if (missionWaypoints && Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
+                    // Attiva la visualizzazione sulla mappa
+                    this.setState({ showMissionOnMap: true }, () => {
+                        console.log('✅ Mission visualization activated successfully');
+                    });
+                } else {
+                    // La missione è selezionata ma non ci sono waypoints
+                    console.log('⚠️ Mission selected but no waypoints available');
+                    alert('Waypoints non ancora caricati. Riprova tra qualche secondo o usa "Test Waypoints".');
+                }
             } else {
-                alert('Seleziona prima una missione dal menu');
+                alert('Seleziona prima una missione dal menu ad albero');
             }
         } catch (error) {
             console.error('Error visualizing mission:', error);
@@ -803,8 +880,8 @@ class DroneBoatInterface extends React.Component {
                         </div>
                     </div>
 
-                    {/* TABELLA MISSIONE IN FONDO ALLA PAGINA */}
-                    {selectedMission && missionWaypoints && (
+                    {/* TABELLA MISSIONE IN FONDO ALLA PAGINA - MOSTRA SE MISSIONE SELEZIONATA */}
+                    {selectedMission && (
                         <div style={styles.missionTable}>
                             <div style={styles.missionTableHeader}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -812,33 +889,64 @@ class DroneBoatInterface extends React.Component {
                                         <h3 style={{ margin: '0 0 15px 0', color: '#1a3a5a' }}>
                                             Dettagli Missione: {selectedMission.split('/').pop().replace('.bin', '')}
                                         </h3>
+
+                                        {/* Informazioni header missione */}
+                                        {this.state.missionInfo && (
+                                            <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px', backgroundColor: '#f8f9fa', padding: '8px', borderRadius: '4px' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+                                                    <div><strong>ID Missione:</strong> {this.state.missionInfo.idMission}</div>
+                                                    <div><strong>N. Missione:</strong> {this.state.missionInfo.nMission}</div>
+                                                    <div><strong>Tot. Waypoints:</strong> {this.state.missionInfo.total_mission_nWP}</div>
+                                                    <div><strong>WP Start:</strong> {this.state.missionInfo.wpStart}</div>
+                                                    <div><strong>Cicli:</strong> {this.state.missionInfo.cycles}</div>
+                                                    <div><strong>WP End:</strong> {this.state.missionInfo.wpEnd}</div>
+                                                    <div><strong>Stand Radius:</strong> {this.state.missionInfo.standRadius?.toFixed(8)}</div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <div style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
                                             Waypoints caricati: {Array.isArray(missionWaypoints) ? missionWaypoints.length : 0}
+                                            {!missionWaypoints && (
+                                                <span style={{ color: '#e67e22', fontWeight: 'bold', marginLeft: '10px' }}>
+                                                    (In attesa dati dal drone...)
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '10px' }}>
                                         <button
                                             style={{ ...styles.blueBtn, fontSize: '12px', padding: '6px 12px' }}
                                             onClick={() => {
-                                                // Aggiungi waypoints di test se non ci sono dati
+                                                // Aggiungi waypoints di test nel formato corretto
                                                 const testWaypoints = [
-                                                    { lat: 42.9372, lng: 10.3696, alt: 0, type: 'START', index: 0 },
-                                                    { lat: 42.9380, lng: 10.3700, alt: 5, type: 'WAYPOINT', index: 1 },
-                                                    { lat: 42.9390, lng: 10.3710, alt: 10, type: 'WAYPOINT', index: 2 },
-                                                    { lat: 42.9400, lng: 10.3720, alt: 5, type: 'END', index: 3 }
+                                                    { nmissione: 0, indexWP: 0, latitude: 44.126474, longitude: 9.933195, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.126474, lng: 9.933195 },
+                                                    { nmissione: 0, indexWP: 1, latitude: 44.125963, longitude: 9.934199, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.125963, lng: 9.934199 },
+                                                    { nmissione: 0, indexWP: 2, latitude: 44.125549, longitude: 9.935042, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.125549, lng: 9.935042 },
+                                                    { nmissione: 0, indexWP: 3, latitude: 44.124713, longitude: 9.936800, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.124713, lng: 9.936800 }
                                                 ];
+                                                const testMissionInfo = {
+                                                    idMission: "provaWPMissioneasfaltoRbig",
+                                                    nMission: 0,
+                                                    total_mission_nWP: 9,
+                                                    wpStart: 1,
+                                                    cycles: 3,
+                                                    wpEnd: 8,
+                                                    standRadius: 0.00004
+                                                };
                                                 this.setState({
                                                     missionWaypoints: testWaypoints,
+                                                    missionInfo: testMissionInfo,
                                                     showMissionOnMap: true
                                                 });
-                                                console.log('✅ Test waypoints loaded:', testWaypoints);
+                                                console.log('✅ Test waypoints loaded (correct format):', testWaypoints);
                                             }}
                                         >
                                             🧪 Test Waypoints
                                         </button>
                                         <button
                                             style={{ ...styles.redBtn, fontSize: '12px', padding: '6px 12px' }}
-                                            onClick={() => this.setState({ selectedMission: null, missionWaypoints: null, showMissionOnMap: false })}
+                                            onClick={() => this.setState({ selectedMission: null, missionWaypoints: null, missionInfo: null, showMissionOnMap: false })}
                                         >
                                             ✕ Chiudi
                                         </button>
@@ -847,105 +955,325 @@ class DroneBoatInterface extends React.Component {
                             </div>
 
                             <div style={styles.missionTableContainer}>
-                                <table style={styles.table}>
-                                    <thead>
-                                        <tr style={styles.tableHeaderRow}>
-                                            <th style={styles.tableHeader}>#</th>
-                                            <th style={styles.tableHeader}>Latitudine</th>
-                                            <th style={styles.tableHeader}>Longitudine</th>
-                                            <th style={styles.tableHeader}>Altitudine</th>
-                                            <th style={styles.tableHeader}>Velocità</th>
-                                            <th style={styles.tableHeader}>Tipo</th>
-                                            <th style={styles.tableHeader}>Azione</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {Array.isArray(missionWaypoints) && missionWaypoints.map((waypoint, index) => {
-                                            // Debug: stampa la struttura del waypoint
-                                            console.log(`Waypoint ${index + 1}:`, waypoint);
+                                {missionWaypoints && Array.isArray(missionWaypoints) && missionWaypoints.length > 0 ? (
+                                    <table style={styles.table}>
+                                        <thead>
+                                            <tr style={styles.tableHeaderRow}>
+                                                <th style={styles.tableHeader}>N.Miss</th>
+                                                <th style={styles.tableHeader}>Index WP</th>
+                                                <th style={styles.tableHeader}>Latitude</th>
+                                                <th style={styles.tableHeader}>Longitude</th>
+                                                <th style={styles.tableHeader}>Nav Mode</th>
+                                                <th style={styles.tableHeader}>Point Type</th>
+                                                <th style={styles.tableHeader}>Monitor Op</th>
+                                                <th style={styles.tableHeader}>Arrive Mode</th>
+                                                <th style={styles.tableHeader}>WP Radius</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {missionWaypoints.map((waypoint, index) => {
+                                                try {
+                                                    // Parsing per formato missione reale
+                                                    const nmissione = waypoint.nmissione ?? waypoint.Nmissione ?? 0;
+                                                    const indexWP = waypoint.indexWP ?? waypoint.IndexWP ?? index;
+                                                    const latitude = waypoint.latitude ?? waypoint.lat ?? 0;
+                                                    const longitude = waypoint.longitude ?? waypoint.lng ?? 0;
+                                                    const navMode = waypoint.navMode ?? waypoint.NavMode ?? 0;
+                                                    const pointType = waypoint.pointType ?? waypoint.PointType ?? 0;
+                                                    const monitoringOp = waypoint.monitoringOp ?? waypoint.MonitoringOp ?? 0;
+                                                    const arriveMode = waypoint.arriveMode ?? waypoint.ArriveMode ?? 0;
+                                                    const waypointRadius = waypoint.waypointRadius ?? waypoint.WaypointRadius ?? 0;
 
-                                            let lng, lat, alt, speed, type, action;
+                                                    const isValidCoordinate = !isNaN(latitude) && !isNaN(longitude) && latitude !== 0 && longitude !== 0;
 
-                                            // Gestisci diversi formati di waypoint
-                                            if (waypoint.lng !== undefined && waypoint.lat !== undefined) {
-                                                lng = parseFloat(waypoint.lng);
-                                                lat = parseFloat(waypoint.lat);
-                                            } else if (waypoint.longitude !== undefined && waypoint.latitude !== undefined) {
-                                                lng = parseFloat(waypoint.longitude);
-                                                lat = parseFloat(waypoint.latitude);
-                                            } else if (waypoint.lon !== undefined && waypoint.lat !== undefined) {
-                                                lng = parseFloat(waypoint.lon);
-                                                lat = parseFloat(waypoint.lat);
-                                            } else if (Array.isArray(waypoint) && waypoint.length >= 2) {
-                                                lng = parseFloat(waypoint[0]);
-                                                lat = parseFloat(waypoint[1]);
-                                                alt = waypoint.length > 2 ? parseFloat(waypoint[2]) : undefined;
-                                            } else if (waypoint.x !== undefined && waypoint.y !== undefined) {
-                                                lng = parseFloat(waypoint.x);
-                                                lat = parseFloat(waypoint.y);
-                                            }
+                                                    return (
+                                                        <tr key={index} style={styles.tableRow}>
+                                                            <td style={styles.tableCell}>{nmissione}</td>
+                                                            <td style={styles.tableCell}>{indexWP}</td>
+                                                            <td style={{
+                                                                ...styles.tableCell,
+                                                                color: isValidCoordinate ? '#333' : '#e74c3c',
+                                                                fontWeight: isValidCoordinate ? 'normal' : 'bold'
+                                                            }}>
+                                                                {isValidCoordinate ? latitude.toFixed(6) + '°' : 'INVALID'}
+                                                            </td>
+                                                            <td style={{
+                                                                ...styles.tableCell,
+                                                                color: isValidCoordinate ? '#333' : '#e74c3c',
+                                                                fontWeight: isValidCoordinate ? 'normal' : 'bold'
+                                                            }}>
+                                                                {isValidCoordinate ? longitude.toFixed(6) + '°' : 'INVALID'}
+                                                            </td>
+                                                            <td style={styles.tableCell}>{navMode}</td>
+                                                            <td style={styles.tableCell}>{pointType}</td>
+                                                            <td style={styles.tableCell}>{monitoringOp}</td>
+                                                            <td style={styles.tableCell}>{arriveMode}</td>
+                                                            <td style={styles.tableCell}>{waypointRadius?.toFixed(8) || '0.00000000'}</td>
+                                                        </tr>
+                                                    );
+                                                } catch (error) {
+                                                    console.error('Error rendering waypoint:', error);
+                                                    return (
+                                                        <tr key={index} style={styles.tableRow}>
+                                                            <td style={styles.tableCell}>{index + 1}</td>
+                                                            <td style={{ ...styles.tableCell, color: '#e74c3c' }} colSpan="8">
+                                                                Errore nel parsing del waypoint
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+                                            })}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div style={{
+                                        padding: '40px',
+                                        textAlign: 'center',
+                                        backgroundColor: '#f8f9fa',
+                                        border: '2px dashed #dee2e6',
+                                        borderRadius: '8px',
+                                        color: '#666'
+                                    }}>
+                                        <h4>⏳ In attesa dei waypoints...</h4>
+                                        <p>I dati della missione vengono richiesti dal drone.</p>
+                                        <p>Se i dati tardano ad arrivare, puoi usare il pulsante <strong>"🧪 Test Waypoints"</strong> sopra per testare la visualizzazione.</p>
+                                    </div>
+                                )}
 
-                                            // Estrai altri dati
-                                            alt = alt || waypoint.altitude || waypoint.alt || waypoint.z || 'N/A';
-                                            speed = waypoint.speed || waypoint.velocity || waypoint.vel || 'N/A';
-                                            type = waypoint.type || waypoint.command || waypoint.cmd || 'WAYPOINT';
-                                            action = waypoint.action || waypoint.param1 || '-';
-
-                                            const isValidCoordinate = !isNaN(lng) && !isNaN(lat);
-
-                                            return (
-                                                <tr key={index} style={styles.tableRow}>
-                                                    <td style={styles.tableCell}>{index + 1}</td>
-                                                    <td style={{
-                                                        ...styles.tableCell,
-                                                        color: isValidCoordinate ? '#333' : '#e74c3c',
-                                                        fontWeight: isValidCoordinate ? 'normal' : 'bold'
-                                                    }}>
-                                                        {isValidCoordinate ? lat.toFixed(6) + '°' : 'INVALID'}
-                                                    </td>
-                                                    <td style={{
-                                                        ...styles.tableCell,
-                                                        color: isValidCoordinate ? '#333' : '#e74c3c',
-                                                        fontWeight: isValidCoordinate ? 'normal' : 'bold'
-                                                    }}>
-                                                        {isValidCoordinate ? lng.toFixed(6) + '°' : 'INVALID'}
-                                                    </td>
-                                                    <td style={styles.tableCell}>
-                                                        {alt !== 'N/A' ? (typeof alt === 'number' ? alt.toFixed(1) + 'm' : alt) : 'N/A'}
-                                                    </td>
-                                                    <td style={styles.tableCell}>
-                                                        {speed !== 'N/A' ? (typeof speed === 'number' ? speed.toFixed(1) + ' kn' : speed) : 'N/A'}
-                                                    </td>
-                                                    <td style={styles.tableCell}>{type}</td>
-                                                    <td style={styles.tableCell}>{action}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-
-                                {/* Debug info */}
+                                {/* Debug info - VERSIONE SICURA */}
                                 <div style={styles.debugInfo}>
                                     <details style={{ marginTop: '15px' }}>
                                         <summary style={{ cursor: 'pointer', color: '#666', fontSize: '14px' }}>
-                                            🔍 Debug: Struttura Dati Waypoints
+                                            🔍 Debug: Informazioni Waypoints ({Array.isArray(missionWaypoints) ? missionWaypoints.length : 0} elementi)
                                         </summary>
-                                        <pre style={{
+                                        <div style={{
                                             backgroundColor: '#f8f9fa',
                                             padding: '10px',
                                             borderRadius: '4px',
                                             fontSize: '12px',
-                                            overflow: 'auto',
-                                            maxHeight: '200px',
                                             marginTop: '10px',
                                             border: '1px solid #e9ecef'
                                         }}>
-                                            {JSON.stringify(missionWaypoints, null, 2)}
-                                        </pre>
+                                            <p><strong>Tipo dati:</strong> {typeof missionWaypoints}</p>
+                                            <p><strong>È Array:</strong> {Array.isArray(missionWaypoints) ? 'Sì' : 'No'}</p>
+                                            <p><strong>Lunghezza:</strong> {Array.isArray(missionWaypoints) ? missionWaypoints.length : 'N/A'}</p>
+                                            {this.state.missionInfo && (
+                                                <>
+                                                    <p><strong>Mission Info presente:</strong> Sì</p>
+                                                    <p><strong>ID Missione:</strong> {this.state.missionInfo.idMission}</p>
+                                                </>
+                                            )}
+                                            {Array.isArray(missionWaypoints) && missionWaypoints.length > 0 && (
+                                                <>
+                                                    <p><strong>Primo elemento:</strong></p>
+                                                    <pre style={{
+                                                        backgroundColor: '#ffffff',
+                                                        padding: '8px',
+                                                        border: '1px solid #ddd',
+                                                        maxHeight: '100px',
+                                                        overflow: 'auto',
+                                                        fontSize: '11px'
+                                                    }}>
+                                                        {JSON.stringify(missionWaypoints[0], null, 2)}
+                                                    </pre>
+                                                </>
+                                            )}
+                                        </div>
                                     </details>
                                 </div>
                             </div>
                         </div>
+                    )}
+                    <div style={styles.missionTable}>
+                        <div style={styles.missionTableHeader}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <h3 style={{ margin: '0 0 15px 0', color: '#1a3a5a' }}>
+                                        Dettagli Missione: {selectedMission.split('/').pop().replace('.bin', '')}
+                                    </h3>
+
+                                    {/* Informazioni header missione */}
+                                    {this.state.missionInfo && (
+                                        <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px', backgroundColor: '#f8f9fa', padding: '8px', borderRadius: '4px' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+                                                <div><strong>ID Missione:</strong> {this.state.missionInfo.idMission}</div>
+                                                <div><strong>N. Missione:</strong> {this.state.missionInfo.nMission}</div>
+                                                <div><strong>Tot. Waypoints:</strong> {this.state.missionInfo.total_mission_nWP}</div>
+                                                <div><strong>WP Start:</strong> {this.state.missionInfo.wpStart}</div>
+                                                <div><strong>Cicli:</strong> {this.state.missionInfo.cycles}</div>
+                                                <div><strong>WP End:</strong> {this.state.missionInfo.wpEnd}</div>
+                                                <div><strong>Stand Radius:</strong> {this.state.missionInfo.standRadius?.toFixed(8)}</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+                                        Waypoints caricati: {Array.isArray(missionWaypoints) ? missionWaypoints.length : 0}
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button
+                                        style={{ ...styles.blueBtn, fontSize: '12px', padding: '6px 12px' }}
+                                        onClick={() => {
+                                            // Aggiungi waypoints di test nel formato corretto
+                                            const testWaypoints = [
+                                                { nmissione: 0, indexWP: 0, latitude: 44.126474, longitude: 9.933195, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.126474, lng: 9.933195 },
+                                                { nmissione: 0, indexWP: 1, latitude: 44.125963, longitude: 9.934199, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.125963, lng: 9.934199 },
+                                                { nmissione: 0, indexWP: 2, latitude: 44.125549, longitude: 9.935042, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.125549, lng: 9.935042 },
+                                                { nmissione: 0, indexWP: 3, latitude: 44.124713, longitude: 9.936800, navMode: 5, pointType: 0, monitoringOp: 0, arriveMode: 0, waypointRadius: 0.00009, lat: 44.124713, lng: 9.936800 }
+                                            ];
+                                            const testMissionInfo = {
+                                                idMission: "provaWPMissioneasfaltoRbig",
+                                                nMission: 0,
+                                                total_mission_nWP: 9,
+                                                wpStart: 1,
+                                                cycles: 3,
+                                                wpEnd: 8,
+                                                standRadius: 0.00004
+                                            };
+                                            this.setState({
+                                                missionWaypoints: testWaypoints,
+                                                missionInfo: testMissionInfo,
+                                                showMissionOnMap: true
+                                            });
+                                            console.log('✅ Test waypoints loaded (correct format):', testWaypoints);
+                                        }}
+                                    >
+                                        🧪 Test Waypoints
+                                    </button>
+                                    <button
+                                        style={{ ...styles.redBtn, fontSize: '12px', padding: '6px 12px' }}
+                                        onClick={() => this.setState({ selectedMission: null, missionWaypoints: null, missionInfo: null, showMissionOnMap: false })}
+                                    >
+                                        ✕ Chiudi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={styles.missionTableContainer}>
+                            <table style={styles.table}>
+                                <thead>
+                                    <tr style={styles.tableHeaderRow}>
+                                        <th style={styles.tableHeader}>N.Miss</th>
+                                        <th style={styles.tableHeader}>Index WP</th>
+                                        <th style={styles.tableHeader}>Latitude</th>
+                                        <th style={styles.tableHeader}>Longitude</th>
+                                        <th style={styles.tableHeader}>Nav Mode</th>
+                                        <th style={styles.tableHeader}>Point Type</th>
+                                        <th style={styles.tableHeader}>Monitor Op</th>
+                                        <th style={styles.tableHeader}>Arrive Mode</th>
+                                        <th style={styles.tableHeader}>WP Radius</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Array.isArray(missionWaypoints) && missionWaypoints.length > 0 && missionWaypoints.map((waypoint, index) => {
+                                        try {
+                                            // Parsing per formato missione reale
+                                            const nmissione = waypoint.nmissione ?? waypoint.Nmissione ?? 0;
+                                            const indexWP = waypoint.indexWP ?? waypoint.IndexWP ?? index;
+                                            const latitude = waypoint.latitude ?? waypoint.lat ?? 0;
+                                            const longitude = waypoint.longitude ?? waypoint.lng ?? 0;
+                                            const navMode = waypoint.navMode ?? waypoint.NavMode ?? 0;
+                                            const pointType = waypoint.pointType ?? waypoint.PointType ?? 0;
+                                            const monitoringOp = waypoint.monitoringOp ?? waypoint.MonitoringOp ?? 0;
+                                            const arriveMode = waypoint.arriveMode ?? waypoint.ArriveMode ?? 0;
+                                            const waypointRadius = waypoint.waypointRadius ?? waypoint.WaypointRadius ?? 0;
+
+                                            const isValidCoordinate = !isNaN(latitude) && !isNaN(longitude) && latitude !== 0 && longitude !== 0;
+
+                                            return (
+                                                <tr key={index} style={styles.tableRow}>
+                                                    <td style={styles.tableCell}>{nmissione}</td>
+                                                    <td style={styles.tableCell}>{indexWP}</td>
+                                                    <td style={{
+                                                        ...styles.tableCell,
+                                                        color: isValidCoordinate ? '#333' : '#e74c3c',
+                                                        fontWeight: isValidCoordinate ? 'normal' : 'bold'
+                                                    }}>
+                                                        {isValidCoordinate ? latitude.toFixed(6) + '°' : 'INVALID'}
+                                                    </td>
+                                                    <td style={{
+                                                        ...styles.tableCell,
+                                                        color: isValidCoordinate ? '#333' : '#e74c3c',
+                                                        fontWeight: isValidCoordinate ? 'normal' : 'bold'
+                                                    }}>
+                                                        {isValidCoordinate ? longitude.toFixed(6) + '°' : 'INVALID'}
+                                                    </td>
+                                                    <td style={styles.tableCell}>{navMode}</td>
+                                                    <td style={styles.tableCell}>{pointType}</td>
+                                                    <td style={styles.tableCell}>{monitoringOp}</td>
+                                                    <td style={styles.tableCell}>{arriveMode}</td>
+                                                    <td style={styles.tableCell}>{waypointRadius?.toFixed(8) || '0.00000000'}</td>
+                                                </tr>
+                                            );
+                                        } catch (error) {
+                                            console.error('Error rendering waypoint:', error);
+                                            return (
+                                                <tr key={index} style={styles.tableRow}>
+                                                    <td style={styles.tableCell}>{index + 1}</td>
+                                                    <td style={{ ...styles.tableCell, color: '#e74c3c' }} colSpan="8">
+                                                        Errore nel parsing del waypoint
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
+                                    })}
+
+                                    {/* Messaggio se non ci sono waypoints */}
+                                    {(!Array.isArray(missionWaypoints) || missionWaypoints.length === 0) && (
+                                        <tr>
+                                            <td style={{ ...styles.tableCell, textAlign: 'center', fontStyle: 'italic' }} colSpan="9">
+                                                Nessun waypoint caricato. Prova il pulsante "Test Waypoints" sopra.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+
+                            {/* Debug info - VERSIONE SICURA */}
+                            <div style={styles.debugInfo}>
+                                <details style={{ marginTop: '15px' }}>
+                                    <summary style={{ cursor: 'pointer', color: '#666', fontSize: '14px' }}>
+                                        🔍 Debug: Informazioni Waypoints ({Array.isArray(missionWaypoints) ? missionWaypoints.length : 0} elementi)
+                                    </summary>
+                                    <div style={{
+                                        backgroundColor: '#f8f9fa',
+                                        padding: '10px',
+                                        borderRadius: '4px',
+                                        fontSize: '12px',
+                                        marginTop: '10px',
+                                        border: '1px solid #e9ecef'
+                                    }}>
+                                        <p><strong>Tipo dati:</strong> {typeof missionWaypoints}</p>
+                                        <p><strong>È Array:</strong> {Array.isArray(missionWaypoints) ? 'Sì' : 'No'}</p>
+                                        <p><strong>Lunghezza:</strong> {Array.isArray(missionWaypoints) ? missionWaypoints.length : 'N/A'}</p>
+                                        {this.state.missionInfo && (
+                                            <>
+                                                <p><strong>Mission Info presente:</strong> Sì</p>
+                                                <p><strong>ID Missione:</strong> {this.state.missionInfo.idMission}</p>
+                                            </>
+                                        )}
+                                        {Array.isArray(missionWaypoints) && missionWaypoints.length > 0 && (
+                                            <>
+                                                <p><strong>Primo elemento:</strong></p>
+                                                <pre style={{
+                                                    backgroundColor: '#ffffff',
+                                                    padding: '8px',
+                                                    border: '1px solid #ddd',
+                                                    maxHeight: '100px',
+                                                    overflow: 'auto',
+                                                    fontSize: '11px'
+                                                }}>
+                                                    {JSON.stringify(missionWaypoints[0], null, 2)}
+                                                </pre>
+                                            </>
+                                        )}
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
                     )}
                 </>
             );
