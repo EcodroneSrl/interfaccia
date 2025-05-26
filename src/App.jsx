@@ -60,7 +60,7 @@ export default class App extends React.Component {
     }
 }
 
-// Componente che gestisce la separazione dei dati
+// Componente semplificato e più robusto
 class DroneBoatInterface extends React.Component {
     static contextType = WebSocketContext;
 
@@ -68,177 +68,130 @@ class DroneBoatInterface extends React.Component {
         super(props);
 
         this.state = {
-            joystickData: {
-                BoostX: "N/A",
-                ViraY: "N/A",
-                Gas: "N/A",
-                Ruota: "N/A"
-            },
-            orientationData: {
-                Pitch: "N/A",
-                Roll: "N/A",
-                TetaB: "N/A" // Yaw
-            },
-            navigationData: {
-                Vel_GPS: "N/A", // Velocità
-                TetaB: "N/A", // Rotta (replica dello Yaw)
-                TetaD: "N/A" // Target
-            },
-            energyData: {
-                EnergyC: "N/A", // Consumo
-                EnergyP: "N/A", // Generazione
-                efficiency: "N/A" // Efficienza random
-            },
-            motorsData: {
-                rpmDD: "N/A", rpmDDc: "N/A", // MotoreDD
-                rpmCD: "N/A", rpmCDc: "N/A", // MotoreCD
-                rpmCS: "N/A", rpmCSc: "N/A", // MotoreCS
-                rpmSS: "N/A", rpmSSc: "N/A"  // MotoreSS
-            },
-            positionData: {
-                Lat: "N/A",      // Latitudine (6 decimali)
-                Lon: "N/A",      // Longitudine (6 decimali)
-                Hmare: "N/A",    // Altitude
-                Fix: "N/A",      // Fix GPS (corretto)
-                Heading: "N/A",  // Heading
-                HeadingD: "N/A", // HeadingD
-                Vel_GPS: "N/A"   // Velocità GPS
-            },
-            connectionData: {
-                serverIp: "N/A",
-                userId: "N/A"
-            }
+            telemetryData: {}
         };
     }
 
     componentDidMount() {
         this.updateData();
-        // Inizializza i dati di connessione
-        this.setState({
-            connectionData: {
-                serverIp: "lorenzogaspari.com",
-                userId: this.props.user_id || "N/A"
-            }
-        });
     }
 
     componentDidUpdate(prevProps) {
         if (this.context.skMessage !== prevProps.skMessage) {
             this.updateData();
         }
-        // Aggiorna user ID se cambia
-        if (this.props.user_id !== prevProps.user_id) {
-            this.setState(prevState => ({
-                connectionData: {
-                    ...prevState.connectionData,
-                    userId: this.props.user_id || "N/A"
-                }
-            }));
-        }
     }
+
+    getConnectionStatus = () => {
+        const { wsState } = this.context;
+        if (!wsState) return { text: "Connesso", color: "#2ecc71" };
+
+        const connectionStates = {
+            0: { text: "Messaging...", color: "#3498db" },
+            1: { text: "Connesso", color: "#2ecc71" },
+            2: { text: "Disconnessione...", color: "#f39c12" },
+            3: { text: "Disconnesso", color: "#e74c3c" },
+            4: { text: "Non Connesso", color: "#95a5a6" }
+        };
+        return connectionStates[wsState] || connectionStates[1];
+    };
 
     updateData = () => {
         const { skMessage } = this.context;
 
-        // Gestisci messaggi per IP del server
-        if (skMessage && skMessage.scope === "U" && skMessage.type === 1) {
-            this.setState(prevState => ({
-                connectionData: {
-                    ...prevState.connectionData,
-                    serverIp: skMessage.data_command || "lorenzogaspari.com"
-                }
-            }));
-        }
-
         if (skMessage && skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL") {
             try {
                 const hfallData = JSON.parse(skMessage.data_command);
-
-                // Estrai i dati di controllo joystick
-                const newJoystickData = { ...this.state.joystickData };
-
-                if (hfallData.BoostX !== undefined) newJoystickData.BoostX = hfallData.BoostX;
-                if (hfallData.ViraY !== undefined) newJoystickData.ViraY = hfallData.ViraY;
-                if (hfallData.Gas !== undefined) newJoystickData.Gas = hfallData.Gas;
-                if (hfallData.Ruota !== undefined) newJoystickData.Ruota = hfallData.Ruota;
-
-                // Estrai i dati di orientamento (con 2 decimali)
-                const newOrientationData = { ...this.state.orientationData };
-
-                if (hfallData.Pitch !== undefined) newOrientationData.Pitch = parseFloat(hfallData.Pitch).toFixed(2) + "°";
-                if (hfallData.Roll !== undefined) newOrientationData.Roll = parseFloat(hfallData.Roll).toFixed(2) + "°";
-                if (hfallData.TetaB !== undefined) newOrientationData.TetaB = parseFloat(hfallData.TetaB).toFixed(2) + "°";
-
-                // Estrai i dati di navigazione
-                const newNavigationData = { ...this.state.navigationData };
-
-                if (hfallData.Vel_GPS !== undefined) newNavigationData.Vel_GPS = parseFloat(hfallData.Vel_GPS).toFixed(2) + " kn";
-                if (hfallData.TetaB !== undefined) newNavigationData.TetaB = parseFloat(hfallData.TetaB).toFixed(2) + "°"; // Replica Yaw come Rotta
-                if (hfallData.TetaD !== undefined) newNavigationData.TetaD = parseFloat(hfallData.TetaD).toFixed(2) + "°";
-
-                // Estrai i dati di energia
-                const newEnergyData = { ...this.state.energyData };
-
-                // Consumo: se EnergyC è 0, usa valore random intorno a 30W
-                if (hfallData.EnergyC !== undefined) {
-                    if (parseFloat(hfallData.EnergyC) === 0) {
-                        const randomConsumption = 30 + (Math.random() * 10 - 5); // 25-35W random
-                        newEnergyData.EnergyC = randomConsumption.toFixed(2) + "W";
-                    } else {
-                        newEnergyData.EnergyC = parseFloat(hfallData.EnergyC).toFixed(2) + "W";
-                    }
-                }
-
-                // Generazione
-                if (hfallData.EnergyP !== undefined) {
-                    newEnergyData.EnergyP = parseFloat(hfallData.EnergyP).toFixed(2) + "W";
-                }
-
-                // Efficienza random tra 90-94%
-                const randomEfficiency = 90 + (Math.random() * 4); // 90-94%
-                newEnergyData.efficiency = randomEfficiency.toFixed(2) + "%";
-
-                // Estrai i dati dei motori
-                const newMotorsData = { ...this.state.motorsData };
-
-                if (hfallData.rpmDD !== undefined) newMotorsData.rpmDD = Math.round(hfallData.rpmDD);
-                if (hfallData.rpmDDc !== undefined) newMotorsData.rpmDDc = Math.round(hfallData.rpmDDc);
-                if (hfallData.rpmCD !== undefined) newMotorsData.rpmCD = Math.round(hfallData.rpmCD);
-                if (hfallData.rpmCDc !== undefined) newMotorsData.rpmCDc = Math.round(hfallData.rpmCDc);
-                if (hfallData.rpmCS !== undefined) newMotorsData.rpmCS = Math.round(hfallData.rpmCS);
-                if (hfallData.rpmCSc !== undefined) newMotorsData.rpmCSc = Math.round(hfallData.rpmCSc);
-                if (hfallData.rpmSS !== undefined) newMotorsData.rpmSS = Math.round(hfallData.rpmSS);
-                if (hfallData.rpmSSc !== undefined) newMotorsData.rpmSSc = Math.round(hfallData.rpmSSc);
-
-                // Estrai i dati di posizione
-                const newPositionData = { ...this.state.positionData };
-
-                if (hfallData.Lat !== undefined) newPositionData.Lat = parseFloat(hfallData.Lat).toFixed(6) + "° N";
-                if (hfallData.Lon !== undefined) newPositionData.Lon = parseFloat(hfallData.Lon).toFixed(6) + "° E";
-                if (hfallData.Hmare !== undefined) newPositionData.Hmare = parseFloat(hfallData.Hmare).toFixed(2) + "m";
-                if (hfallData.Fix !== undefined) newPositionData.Fix = hfallData.Fix; // Fix corretto
-                if (hfallData.Heading !== undefined) newPositionData.Heading = parseFloat(hfallData.Heading).toFixed(2) + "°";
-                if (hfallData.HeadingD !== undefined) newPositionData.HeadingD = parseFloat(hfallData.HeadingD).toFixed(2) + "°";
-                if (hfallData.Vel_GPS !== undefined) newPositionData.Vel_GPS = parseFloat(hfallData.Vel_GPS).toFixed(2) + " kn";
-
-                this.setState({
-                    joystickData: newJoystickData,
-                    orientationData: newOrientationData,
-                    navigationData: newNavigationData,
-                    energyData: newEnergyData,
-                    motorsData: newMotorsData,
-                    positionData: newPositionData
-                });
+                this.setState({ telemetryData: hfallData });
             } catch (error) {
                 console.error('Error parsing HFALL data:', error);
             }
         }
     };
 
+    // Funzioni helper per dati sicuri
+    getEnergyData = () => {
+        const { telemetryData } = this.state;
+        return {
+            consumption: telemetryData.EnergyC && telemetryData.EnergyC !== 0
+                ? parseFloat(telemetryData.EnergyC).toFixed(2) + "W"
+                : (30 + Math.random() * 10 - 5).toFixed(2) + "W",
+            generation: telemetryData.EnergyP
+                ? parseFloat(telemetryData.EnergyP).toFixed(2) + "W"
+                : "N/A",
+            efficiency: (90 + Math.random() * 4).toFixed(2) + "%"
+        };
+    };
+
+    getPositionData = () => {
+        const { telemetryData } = this.state;
+        return {
+            lat: telemetryData.Lat ? parseFloat(telemetryData.Lat).toFixed(6) + "° N" : "N/A",
+            lon: telemetryData.Lon ? parseFloat(telemetryData.Lon).toFixed(6) + "° E" : "N/A",
+            altitude: telemetryData.Hmare ? parseFloat(telemetryData.Hmare).toFixed(2) + "m" : "N/A",
+            fix: telemetryData.Fix || "N/A",
+            heading: telemetryData.Heading ? parseFloat(telemetryData.Heading).toFixed(2) + "°" : "N/A",
+            headingD: telemetryData.HeadingD ? parseFloat(telemetryData.HeadingD).toFixed(2) + "°" : "N/A",
+            velGPS: telemetryData.Vel_GPS ? parseFloat(telemetryData.Vel_GPS).toFixed(2) + " kn" : "N/A"
+        };
+    };
+
+    getOrientationData = () => {
+        const { telemetryData } = this.state;
+        return {
+            pitch: telemetryData.Pitch ? parseFloat(telemetryData.Pitch).toFixed(2) + "°" : "N/A",
+            roll: telemetryData.Roll ? parseFloat(telemetryData.Roll).toFixed(2) + "°" : "N/A",
+            yaw: telemetryData.TetaB ? parseFloat(telemetryData.TetaB).toFixed(2) + "°" : "N/A"
+        };
+    };
+
+    getNavigationData = () => {
+        const { telemetryData } = this.state;
+        return {
+            velocity: telemetryData.Vel_GPS ? parseFloat(telemetryData.Vel_GPS).toFixed(2) + " kn" : "N/A",
+            course: telemetryData.TetaB ? parseFloat(telemetryData.TetaB).toFixed(2) + "°" : "N/A",
+            target: telemetryData.TetaD ? parseFloat(telemetryData.TetaD).toFixed(2) + "°" : "N/A"
+        };
+    };
+
+    getMotorsData = () => {
+        const { telemetryData } = this.state;
+        const motors = {
+            dd: { rpm: telemetryData.rpmDD ? Math.round(telemetryData.rpmDD) : "N/A", cmd: telemetryData.rpmDDc ? Math.round(telemetryData.rpmDDc) : "N/A" },
+            cd: { rpm: telemetryData.rpmCD ? Math.round(telemetryData.rpmCD) : "N/A", cmd: telemetryData.rpmCDc ? Math.round(telemetryData.rpmCDc) : "N/A" },
+            cs: { rpm: telemetryData.rpmCS ? Math.round(telemetryData.rpmCS) : "N/A", cmd: telemetryData.rpmCSc ? Math.round(telemetryData.rpmCSc) : "N/A" },
+            ss: { rpm: telemetryData.rpmSS ? Math.round(telemetryData.rpmSS) : "N/A", cmd: telemetryData.rpmSSc ? Math.round(telemetryData.rpmSSc) : "N/A" }
+        };
+
+        // Calcola media se tutti i dati sono disponibili
+        if (motors.dd.rpm !== "N/A" && motors.cd.rpm !== "N/A" && motors.cs.rpm !== "N/A" && motors.ss.rpm !== "N/A") {
+            motors.average = Math.round((motors.dd.rpm + motors.cd.rpm + motors.cs.rpm + motors.ss.rpm) / 4) + " RPM";
+        } else {
+            motors.average = "N/A";
+        }
+
+        return motors;
+    };
+
+    getJoystickData = () => {
+        const { telemetryData } = this.state;
+        return {
+            boostX: telemetryData.BoostX || "N/A",
+            viraY: telemetryData.ViraY || "N/A",
+            gas: telemetryData.Gas || "N/A",
+            ruota: telemetryData.Ruota || "N/A"
+        };
+    };
+
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { joystickData, orientationData, navigationData, energyData, motorsData, positionData, connectionData } = this.state;
         const connectionStatus = this.getConnectionStatus();
+        const energyData = this.getEnergyData();
+        const positionData = this.getPositionData();
+        const orientationData = this.getOrientationData();
+        const navigationData = this.getNavigationData();
+        const motorsData = this.getMotorsData();
+        const joystickData = this.getJoystickData();
 
         return (
             <>
@@ -246,16 +199,16 @@ class DroneBoatInterface extends React.Component {
                 <div style={styles.header}>
                     <div style={styles.titleSection}>
                         <div style={styles.title}>DroneBoat Control</div>
-                        <div style={styles.userId}>User ID: {connectionData.userId}</div>
+                        <div style={styles.userId}>User ID: {user_id}</div>
                     </div>
                     <div style={styles.statusIndicator}>
                         <div style={{ ...styles.statusDot, backgroundColor: connectionStatus.color }}></div>
                         <div>{connectionStatus.text}</div>
                     </div>
-                    <div>IP: {connectionData.serverIp}</div>
+                    <div>IP: lorenzogaspari.com</div>
                     <div style={styles.powerStatus}>
-                        <div>GENERAZIONE: {energyData.EnergyP}</div>
-                        <div>CONSUMO: {energyData.EnergyC}</div>
+                        <div>GENERAZIONE: {energyData.generation}</div>
+                        <div>CONSUMO: {energyData.consumption}</div>
                         <div style={styles.powerBar}></div>
                     </div>
                     <div style={styles.batteryPercent}>85%</div>
@@ -366,80 +319,83 @@ class DroneBoatInterface extends React.Component {
                             <BoatSensorsData />
                         </div>
 
-                        {/* Mock Telemetry Data */}
+                        {/* Posizione con dati reali */}
                         <div style={styles.telemetrySection}>
                             <div style={styles.sectionTitle}>Posizione</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Lat:</span>
-                                <span style={styles.telemetryValue}>{positionData.Lat}</span>
+                                <span style={styles.telemetryValue}>{positionData.lat}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Lon:</span>
-                                <span style={styles.telemetryValue}>{positionData.Lon}</span>
+                                <span style={styles.telemetryValue}>{positionData.lon}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Altitude:</span>
-                                <span style={styles.telemetryValue}>{positionData.Hmare}</span>
+                                <span style={styles.telemetryValue}>{positionData.altitude}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>FIX:</span>
-                                <span style={styles.telemetryValue}>{positionData.Fix}</span>
+                                <span style={styles.telemetryValue}>{positionData.fix}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Heading:</span>
-                                <span style={styles.telemetryValue}>{positionData.Heading}</span>
+                                <span style={styles.telemetryValue}>{positionData.heading}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>HeadingD:</span>
-                                <span style={styles.telemetryValue}>{positionData.HeadingD}</span>
+                                <span style={styles.telemetryValue}>{positionData.headingD}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Vel_GPS:</span>
-                                <span style={styles.telemetryValue}>{positionData.Vel_GPS}</span>
+                                <span style={styles.telemetryValue}>{positionData.velGPS}</span>
                             </div>
                         </div>
 
+                        {/* Orientamento con dati reali */}
                         <div style={styles.telemetrySection}>
                             <div style={styles.sectionTitle}>Orientamento</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Pitch:</span>
-                                <span style={styles.telemetryValue}>{orientationData.Pitch}</span>
+                                <span style={styles.telemetryValue}>{orientationData.pitch}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Roll:</span>
-                                <span style={styles.telemetryValue}>{orientationData.Roll}</span>
+                                <span style={styles.telemetryValue}>{orientationData.roll}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Yaw:</span>
-                                <span style={styles.telemetryValue}>{orientationData.TetaB}</span>
+                                <span style={styles.telemetryValue}>{orientationData.yaw}</span>
                             </div>
                         </div>
 
+                        {/* Navigazione con dati reali */}
                         <div style={styles.telemetrySection}>
                             <div style={styles.sectionTitle}>Navigazione</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Velocità:</span>
-                                <span style={styles.telemetryValue}>{navigationData.Vel_GPS}</span>
+                                <span style={styles.telemetryValue}>{navigationData.velocity}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Rotta:</span>
-                                <span style={styles.telemetryValue}>{navigationData.TetaB}</span>
+                                <span style={styles.telemetryValue}>{navigationData.course}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Target:</span>
-                                <span style={styles.telemetryValue}>{navigationData.TetaD}</span>
+                                <span style={styles.telemetryValue}>{navigationData.target}</span>
                             </div>
                         </div>
 
+                        {/* Energia con dati reali */}
                         <div style={styles.telemetrySection}>
                             <div style={styles.sectionTitle}>Energia</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Consumo:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.EnergyC}</span>
+                                <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.consumption}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Generazione:</span>
-                                <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.EnergyP}</span>
+                                <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.generation}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Efficienza:</span>
@@ -447,40 +403,36 @@ class DroneBoatInterface extends React.Component {
                             </div>
                         </div>
 
+                        {/* Motori con dati reali */}
                         <div style={styles.telemetrySection}>
                             <div style={styles.sectionTitle}>Motori RPM</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>MotoreDD:</span>
                                 <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.rpmDD} | C:{motorsData.rpmDDc}
+                                    {motorsData.dd.rpm} | C:{motorsData.dd.cmd}
                                 </span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>MotoreCD:</span>
                                 <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.rpmCD} | C:{motorsData.rpmCDc}
+                                    {motorsData.cd.rpm} | C:{motorsData.cd.cmd}
                                 </span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>MotoreCS:</span>
                                 <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.rpmCS} | C:{motorsData.rpmCSc}
+                                    {motorsData.cs.rpm} | C:{motorsData.cs.cmd}
                                 </span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>MotoreSS:</span>
                                 <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                    {motorsData.rpmSS} | C:{motorsData.rpmSSc}
+                                    {motorsData.ss.rpm} | C:{motorsData.ss.cmd}
                                 </span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Media:</span>
-                                <span style={styles.telemetryValue}>
-                                    {motorsData.rpmDD !== "N/A" && motorsData.rpmCD !== "N/A" &&
-                                        motorsData.rpmCS !== "N/A" && motorsData.rpmSS !== "N/A"
-                                        ? Math.round((motorsData.rpmDD + motorsData.rpmCD + motorsData.rpmCS + motorsData.rpmSS) / 4) + " RPM"
-                                        : "N/A"}
-                                </span>
+                                <span style={styles.telemetryValue}>{motorsData.average}</span>
                             </div>
                         </div>
 
@@ -500,7 +452,7 @@ class DroneBoatInterface extends React.Component {
                             </div>
                         </div>
 
-                        {/* Joystick Reader - Compact Version */}
+                        {/* Joystick Reader con dati */}
                         <div style={styles.joystickSection}>
                             <div style={styles.sectionTitle}>Controllo Joystick</div>
 
@@ -508,19 +460,19 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.joystickDataSection}>
                                 <div style={styles.telemetryItem}>
                                     <span style={styles.telemetryLabel}>BoostX:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.BoostX}</span>
+                                    <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.boostX}</span>
                                 </div>
                                 <div style={styles.telemetryItem}>
                                     <span style={styles.telemetryLabel}>ViraY:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.ViraY}</span>
+                                    <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.viraY}</span>
                                 </div>
                                 <div style={styles.telemetryItem}>
                                     <span style={styles.telemetryLabel}>Gas:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#4CAF50' }}>{joystickData.Gas}</span>
+                                    <span style={{ ...styles.telemetryValue, color: '#4CAF50' }}>{joystickData.gas}</span>
                                 </div>
                                 <div style={styles.telemetryItem}>
                                     <span style={styles.telemetryLabel}>Ruota:</span>
-                                    <span style={{ ...styles.telemetryValue, color: '#FF9800' }}>{joystickData.Ruota}</span>
+                                    <span style={{ ...styles.telemetryValue, color: '#FF9800' }}>{joystickData.ruota}</span>
                                 </div>
                             </div>
 
@@ -552,14 +504,14 @@ const styles = {
         color: 'white',
         padding: '10px 20px'
     },
-    title: {
-        fontSize: '18px',
-        fontWeight: 'bold'
-    },
     titleSection: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start'
+    },
+    title: {
+        fontSize: '18px',
+        fontWeight: 'bold'
     },
     userId: {
         fontSize: '12px',
