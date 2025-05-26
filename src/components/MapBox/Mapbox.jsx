@@ -10,7 +10,12 @@ import { WebSocketContext } from '../Websockets';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZWNvZHJvbmUiLCJhIjoiY2xnZjYzZzRxMDFjMzNkbW43Z3BsbW1yNSJ9.S2dYTcn4i6myxzNVxWmxgQ';
 
-const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
+const MapboxMap = ({
+    stateapp,
+    mapStyle = "satellite",
+    missionWaypoints = null,
+    selectedMission = null
+}) => {
 
     const { handleAddMarker, mapmarkers, clearMap } = useContext(MapContext);
 
@@ -28,6 +33,11 @@ const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
 
     const markerRef = useRef(null);
 
+    // Ref per gestire la missione visualizzata
+    const missionMarkersRef = useRef([]);
+    const missionSourceRef = useRef(null);
+    const missionLayerRef = useRef(null);
+
     // Funzione per gestire diversi stili di mappa
     const getMapStyle = (style) => {
         const styles = {
@@ -41,6 +51,200 @@ const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
     };
 
     const mapStyleUrl = getMapStyle(mapStyle);
+
+    // Funzione per pulire la missione visualizzata
+    const clearMissionVisualization = useCallback(() => {
+        if (!map.current) return;
+
+        // Rimuovi tutti i marker della missione
+        missionMarkersRef.current.forEach(marker => {
+            marker.remove();
+        });
+        missionMarkersRef.current = [];
+
+        // Rimuovi layer e source della linea missione
+        if (missionLayerRef.current && map.current.getLayer('mission-route')) {
+            map.current.removeLayer('mission-route');
+            missionLayerRef.current = null;
+        }
+
+        if (missionSourceRef.current && map.current.getSource('mission-route')) {
+            map.current.removeSource('mission-route');
+            missionSourceRef.current = null;
+        }
+    }, []);
+
+    // Funzione per visualizzare la missione sulla mappa
+    const visualizeMission = useCallback((waypoints) => {
+        if (!map.current || !waypoints || !Array.isArray(waypoints) || waypoints.length === 0) {
+            return;
+        }
+
+        // Prima pulisci qualsiasi visualizzazione precedente
+        clearMissionVisualization();
+
+        console.log('Visualizing mission waypoints:', waypoints);
+
+        const coordinates = [];
+        const bounds = new mapboxgl.LngLatBounds();
+
+        // Crea marker per ogni waypoint
+        waypoints.forEach((waypoint, index) => {
+            let lng, lat;
+
+            // Gestisci diversi formati di waypoint
+            if (waypoint.lng !== undefined && waypoint.lat !== undefined) {
+                lng = parseFloat(waypoint.lng);
+                lat = parseFloat(waypoint.lat);
+            } else if (waypoint.longitude !== undefined && waypoint.latitude !== undefined) {
+                lng = parseFloat(waypoint.longitude);
+                lat = parseFloat(waypoint.latitude);
+            } else if (waypoint.lon !== undefined && waypoint.lat !== undefined) {
+                lng = parseFloat(waypoint.lon);
+                lat = parseFloat(waypoint.lat);
+            } else if (Array.isArray(waypoint) && waypoint.length >= 2) {
+                lng = parseFloat(waypoint[0]);
+                lat = parseFloat(waypoint[1]);
+            } else if (waypoint.x !== undefined && waypoint.y !== undefined) {
+                lng = parseFloat(waypoint.x);
+                lat = parseFloat(waypoint.y);
+            } else {
+                console.warn('Waypoint format not recognized:', waypoint);
+                return;
+            }
+
+            // Verifica che le coordinate siano valide
+            if (isNaN(lng) || isNaN(lat)) {
+                console.warn('Invalid coordinates for waypoint:', waypoint);
+                return;
+            }
+
+            coordinates.push([lng, lat]);
+            bounds.extend([lng, lat]);
+
+            // Crea il marker per il waypoint
+            const el = document.createElement('div');
+            el.className = 'mission-waypoint-marker';
+            el.style.cssText = `
+                background-color: #FF6B35;
+                border: 3px solid #ffffff;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 12px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                cursor: pointer;
+            `;
+            el.textContent = (index + 1).toString();
+
+            // Tooltip per il waypoint
+            const popup = new mapboxgl.Popup({
+                offset: 25,
+                closeButton: false
+            }).setHTML(`
+                <div style="font-size: 12px;">
+                    <strong>Waypoint ${index + 1}</strong><br>
+                    Lat: ${lat.toFixed(6)}°<br>
+                    Lng: ${lng.toFixed(6)}°
+                    ${waypoint.altitude ? `<br>Alt: ${waypoint.altitude}m` : ''}
+                    ${waypoint.speed ? `<br>Speed: ${waypoint.speed} kn` : ''}
+                </div>
+            `);
+
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat([lng, lat])
+                .setPopup(popup)
+                .addTo(map.current);
+
+            missionMarkersRef.current.push(marker);
+        });
+
+        // Disegna la linea che connette i waypoints se ci sono almeno 2 punti
+        if (coordinates.length >= 2) {
+            const geojson = {
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                    type: 'LineString',
+                    coordinates: coordinates
+                }
+            };
+
+            map.current.addSource('mission-route', {
+                type: 'geojson',
+                data: geojson
+            });
+
+            map.current.addLayer({
+                id: 'mission-route',
+                type: 'line',
+                source: 'mission-route',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#FF6B35',
+                    'line-width': 4,
+                    'line-opacity': 0.8
+                }
+            });
+
+            missionSourceRef.current = 'mission-route';
+            missionLayerRef.current = 'mission-route';
+
+            // Aggiungi anche una linea più spessa trasparente per migliore visibilità
+            map.current.addLayer({
+                id: 'mission-route-outline',
+                type: 'line',
+                source: 'mission-route',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#ffffff',
+                    'line-width': 6,
+                    'line-opacity': 0.5
+                }
+            }, 'mission-route'); // Inserisci sotto la linea principale
+        }
+
+        // Centra la mappa sui waypoints della missione
+        if (coordinates.length > 0) {
+            if (coordinates.length === 1) {
+                // Se c'è solo un waypoint, centra su quello
+                map.current.flyTo({
+                    center: coordinates[0],
+                    zoom: Math.max(zoom, 14),
+                    essential: true,
+                });
+            } else {
+                // Se ci sono più waypoints, mostra tutti
+                map.current.fitBounds(bounds, {
+                    padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                    maxZoom: 16
+                });
+            }
+        }
+
+    }, [clearMissionVisualization, zoom]);
+
+    // Effect per gestire la visualizzazione della missione
+    useEffect(() => {
+        if (missionWaypoints && selectedMission) {
+            console.log('Mission waypoints received for visualization:', missionWaypoints);
+            visualizeMission(missionWaypoints);
+        } else {
+            // Se non ci sono waypoints o missione selezionata, pulisci
+            clearMissionVisualization();
+        }
+    }, [missionWaypoints, selectedMission, visualizeMission, clearMissionVisualization]);
 
     useEffect(() => {
 
@@ -92,6 +296,13 @@ const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
                 zoom: Math.max(zoom, 12), // Zoom minimo 12 per vedere bene la barca
                 essential: true,
             });
+        }
+    };
+
+    // Funzione per centrare sulla missione
+    const centerOnMission = () => {
+        if (missionWaypoints && missionWaypoints.length > 0 && map.current) {
+            visualizeMission(missionWaypoints);
         }
     };
 
@@ -172,6 +383,13 @@ const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
 
     }, [stateapp, handleAddMarker, funcOnClick, mapStyleUrl, clearMap, autoCenter]);
 
+    // Cleanup quando il componente viene smontato
+    useEffect(() => {
+        return () => {
+            clearMissionVisualization();
+        };
+    }, [clearMissionVisualization]);
+
     return (
         <div>
             <div className="sidebar">
@@ -223,11 +441,40 @@ const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
                     🎯 Centra su Barca
                 </button>
 
+                {/* Pulsante per centrare sulla missione */}
+                {missionWaypoints && selectedMission && (
+                    <button
+                        onClick={centerOnMission}
+                        style={{
+                            backgroundColor: '#FF6B35',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 12px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        🎯 Centra su Missione
+                    </button>
+                )}
+
                 {boatPosition && (
                     <div style={{ fontSize: '10px', color: '#666', marginTop: '5px', borderTop: '1px solid #ddd', paddingTop: '5px' }}>
                         <div><strong>Posizione Barca:</strong></div>
                         <div>Lat: {boatPosition[1].toFixed(4)}°N</div>
                         <div>Lon: {boatPosition[0].toFixed(4)}°E</div>
+                    </div>
+                )}
+
+                {/* Info missione */}
+                {missionWaypoints && selectedMission && (
+                    <div style={{ fontSize: '10px', color: '#666', marginTop: '5px', borderTop: '1px solid #ddd', paddingTop: '5px' }}>
+                        <div><strong>Missione Attiva:</strong></div>
+                        <div style={{ color: '#FF6B35', fontWeight: 'bold' }}>
+                            {selectedMission.split('/').pop().replace('.bin', '')}
+                        </div>
+                        <div>Waypoints: {Array.isArray(missionWaypoints) ? missionWaypoints.length : 0}</div>
                     </div>
                 )}
             </div>
@@ -241,12 +488,9 @@ const MapboxMap = ({ stateapp, mapStyle = "satellite" }) => {
 
 MapboxMap.propTypes = {
     stateapp: PropTypes.string.isRequired,
-    mapStyle: PropTypes.string
+    mapStyle: PropTypes.string,
+    missionWaypoints: PropTypes.array,
+    selectedMission: PropTypes.string
 }
-/*MarkerList.propTypes = {
-    markers: PropTypes.arrayOf(PropTypes.object).isRequired,
-    onSubmitForm: PropTypes.func.isRequired,
-    onSingleChange: PropTypes.func.isRequired
-};*/
 
 export default MapboxMap;

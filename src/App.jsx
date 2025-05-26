@@ -72,7 +72,9 @@ class DroneBoatInterface extends React.Component {
             serverIp: "192.168.1.10", // Default IP
             userId: "NNN", // Default User ID
             missionsTree: null, // Albero delle missioni
-            selectedMission: null // Missione selezionata
+            selectedMission: null, // Missione selezionata
+            missionWaypoints: null, // Waypoints della missione selezionata
+            showMissionOnMap: false // Flag per mostrare la missione sulla mappa
         };
     }
 
@@ -145,6 +147,18 @@ class DroneBoatInterface extends React.Component {
                     } catch (parseError) {
                         console.error('Error parsing missions tree:', parseError);
                     }
+                } else if (skMessage.type === 2) {
+                    // Waypoints della missione (nuovo tipo di messaggio)
+                    try {
+                        const waypointsData = JSON.parse(skMessage.data_command);
+                        this.setState({
+                            missionWaypoints: waypointsData,
+                            showMissionOnMap: true
+                        });
+                        console.log('Mission waypoints received:', waypointsData);
+                    } catch (parseError) {
+                        console.error('Error parsing mission waypoints:', parseError);
+                    }
                 }
             }
 
@@ -191,22 +205,59 @@ class DroneBoatInterface extends React.Component {
         const { sendMessage } = this.context;
 
         try {
-            this.setState({ selectedMission: filePath });
+            this.setState({
+                selectedMission: filePath,
+                showMissionOnMap: false // Reset visualizzazione precedente
+            });
 
             // Richiedi i waypoint della missione selezionata
             if (sendMessage && filePath.endsWith('.bin')) {
                 const correctedPath = encodeURIComponent(filePath.trim());
                 const msgData = {
                     scope: "M",
-                    type: 1,
-                    id_message: "NNN",
+                    type: 2, // Nuovo tipo per richiedere waypoints
+                    id_message: "GetWaypoints",
                     data_command: correctedPath
                 };
                 sendMessage(msgData);
+                console.log('Requesting waypoints for mission:', correctedPath);
             }
         } catch (error) {
             console.error('Error selecting mission:', error);
         }
+    };
+
+    // Funzione per visualizzare la missione sulla mappa
+    handleVisualizeMission = () => {
+        const { selectedMission, missionWaypoints } = this.state;
+        const { setAppState } = this.props;
+
+        try {
+            if (selectedMission && missionWaypoints) {
+                // Mostra la missione sulla mappa
+                this.setState({ showMissionOnMap: true });
+
+                // Cambia lo stato dell'app per mostrare la mappa
+                setAppState("MAP");
+
+                console.log('Visualizing mission on map:', selectedMission);
+                console.log('Waypoints:', missionWaypoints);
+            } else if (selectedMission && !missionWaypoints) {
+                // Richiedi nuovamente i waypoints se non sono stati caricati
+                this.handleMissionSelect(selectedMission);
+                alert('Caricamento waypoints in corso...');
+            } else {
+                alert('Seleziona prima una missione');
+            }
+        } catch (error) {
+            console.error('Error visualizing mission:', error);
+            alert('Errore durante la visualizzazione della missione');
+        }
+    };
+
+    // Funzione per nascondere la missione dalla mappa
+    handleHideMission = () => {
+        this.setState({ showMissionOnMap: false });
     };
 
     // Funzione per renderizzare l'albero delle missioni
@@ -330,7 +381,14 @@ class DroneBoatInterface extends React.Component {
     render() {
         try {
             const { appst, user_id, setAppState } = this.props;
-            const { serverIp, userId, missionsTree, selectedMission } = this.state;
+            const {
+                serverIp,
+                userId,
+                missionsTree,
+                selectedMission,
+                missionWaypoints,
+                showMissionOnMap
+            } = this.state;
 
             // Controlli di sicurezza per evitare errori
             const safeAppst = appst || "STD";
@@ -405,12 +463,7 @@ class DroneBoatInterface extends React.Component {
                                 </button>
                                 <button
                                     style={selectedMission ? styles.blueBtn : { ...styles.blueBtn, opacity: 0.5 }}
-                                    onClick={() => {
-                                        if (selectedMission) {
-                                            alert(`Visualizzazione missione: ${selectedMission}`);
-                                            // Qui puoi aggiungere la logica per visualizzare la missione
-                                        }
-                                    }}
+                                    onClick={this.handleVisualizeMission}
                                     disabled={!selectedMission}
                                 >
                                     Visualizza
@@ -429,9 +482,24 @@ class DroneBoatInterface extends React.Component {
                                 </button>
                             </div>
 
+                            {/* Indicatore missione selezionata */}
                             {selectedMission && (
-                                <div style={{ ...styles.treeItem, backgroundColor: '#e8f5e8', color: '#2d5a2d', marginBottom: '10px' }}>
-                                    Selezionata: {selectedMission.split('/').pop()}
+                                <div style={styles.selectedMissionInfo}>
+                                    <div style={{ ...styles.treeItem, backgroundColor: '#e8f5e8', color: '#2d5a2d', marginBottom: '5px' }}>
+                                        Selezionata: {selectedMission.split('/').pop()}
+                                    </div>
+                                    {missionWaypoints && (
+                                        <div style={{ fontSize: '12px', color: '#666', padding: '5px' }}>
+                                            Waypoints caricati: {Array.isArray(missionWaypoints) ? missionWaypoints.length : 'N/A'}
+                                        </div>
+                                    )}
+                                    {showMissionOnMap && (
+                                        <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+                                            <button style={{ ...styles.blueBtn, fontSize: '12px', padding: '4px 8px' }} onClick={this.handleHideMission}>
+                                                Nascondi Mappa
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -485,9 +553,13 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.mapView}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
 
-                                {/* MapboxMap component */}
+                                {/* MapboxMap component con waypoints della missione */}
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
-                                    <MapboxMap stateapp={safeAppst} />
+                                    <MapboxMap
+                                        stateapp={safeAppst}
+                                        missionWaypoints={showMissionOnMap ? missionWaypoints : null}
+                                        selectedMission={showMissionOnMap ? selectedMission : null}
+                                    />
                                 </div>
 
                                 {/* Mission/Waypoint Forms */}
@@ -507,6 +579,11 @@ class DroneBoatInterface extends React.Component {
                                     <div>TEL_MODE_2 - Con mantenimento rotta</div>
                                     <div>Autonomia: 4.5h</div>
                                     <div>Distanza: 120m</div>
+                                    {showMissionOnMap && (
+                                        <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                                            Missione: {selectedMission ? selectedMission.split('/').pop() : ''}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -803,6 +880,13 @@ const styles = {
     },
     selected: {
         backgroundColor: '#e0f0ff'
+    },
+    selectedMissionInfo: {
+        border: '1px solid #4CAF50',
+        borderRadius: '5px',
+        padding: '5px',
+        marginBottom: '10px',
+        backgroundColor: '#f0f8f0'
     },
     blueBtn: {
         backgroundColor: '#3498db',
