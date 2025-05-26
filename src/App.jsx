@@ -94,6 +94,15 @@ class DroneBoatInterface extends React.Component {
                 rpmCD: "N/A", rpmCDc: "N/A", // MotoreCD
                 rpmCS: "N/A", rpmCSc: "N/A", // MotoreCS
                 rpmSS: "N/A", rpmSSc: "N/A"  // MotoreSS
+            },
+            positionData: {
+                Lat: "N/A",      // Latitudine (6 decimali)
+                Lon: "N/A",      // Longitudine (6 decimali)
+                Hmare: "N/A",    // Altitude
+                FIX: "N/A",      // Fix GPS
+                Heading: "N/A",  // Heading
+                HeadingD: "N/A", // HeadingD
+                Vel_GPS: "N/A"   // Velocità GPS
             }
         };
     }
@@ -171,12 +180,24 @@ class DroneBoatInterface extends React.Component {
                 if (hfallData.rpmSS !== undefined) newMotorsData.rpmSS = Math.round(hfallData.rpmSS);
                 if (hfallData.rpmSSc !== undefined) newMotorsData.rpmSSc = Math.round(hfallData.rpmSSc);
 
+                // Estrai i dati di posizione
+                const newPositionData = { ...this.state.positionData };
+
+                if (hfallData.Lat !== undefined) newPositionData.Lat = parseFloat(hfallData.Lat).toFixed(6) + "° N";
+                if (hfallData.Lon !== undefined) newPositionData.Lon = parseFloat(hfallData.Lon).toFixed(6) + "° E";
+                if (hfallData.Hmare !== undefined) newPositionData.Hmare = parseFloat(hfallData.Hmare).toFixed(2) + "m";
+                if (hfallData.FIX !== undefined) newPositionData.FIX = hfallData.FIX;
+                if (hfallData.Heading !== undefined) newPositionData.Heading = parseFloat(hfallData.Heading).toFixed(2) + "°";
+                if (hfallData.HeadingD !== undefined) newPositionData.HeadingD = parseFloat(hfallData.HeadingD).toFixed(2) + "°";
+                if (hfallData.Vel_GPS !== undefined) newPositionData.Vel_GPS = parseFloat(hfallData.Vel_GPS).toFixed(2) + " kn";
+
                 this.setState({
                     joystickData: newJoystickData,
                     orientationData: newOrientationData,
                     navigationData: newNavigationData,
                     energyData: newEnergyData,
-                    motorsData: newMotorsData
+                    motorsData: newMotorsData,
+                    positionData: newPositionData
                 });
             } catch (error) {
                 console.error('Error parsing HFALL data:', error);
@@ -186,7 +207,7 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { joystickData, orientationData, navigationData, energyData, motorsData } = this.state;
+        const { joystickData, orientationData, navigationData, energyData, motorsData, positionData } = this.state;
 
         return (
             <>
@@ -316,15 +337,31 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.sectionTitle}>Posizione</div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Lat:</span>
-                                <span style={styles.telemetryValue}>41.8827° N</span>
+                                <span style={styles.telemetryValue}>{positionData.Lat}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Lon:</span>
-                                <span style={styles.telemetryValue}>12.4964° E</span>
+                                <span style={styles.telemetryValue}>{positionData.Lon}</span>
                             </div>
                             <div style={styles.telemetryItem}>
-                                <span style={styles.telemetryLabel}>Alt:</span>
-                                <span style={styles.telemetryValue}>0.5m</span>
+                                <span style={styles.telemetryLabel}>Altitude:</span>
+                                <span style={styles.telemetryValue}>{positionData.Hmare}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>FIX:</span>
+                                <span style={styles.telemetryValue}>{positionData.FIX}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Heading:</span>
+                                <span style={styles.telemetryValue}>{positionData.Heading}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>HeadingD:</span>
+                                <span style={styles.telemetryValue}>{positionData.HeadingD}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Vel_GPS:</span>
+                                <span style={styles.telemetryValue}>{positionData.Vel_GPS}</span>
                             </div>
                         </div>
 
