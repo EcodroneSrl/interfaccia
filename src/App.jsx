@@ -99,26 +99,56 @@ class DroneBoatInterface extends React.Component {
                 Lat: "N/A",      // Latitudine (6 decimali)
                 Lon: "N/A",      // Longitudine (6 decimali)
                 Hmare: "N/A",    // Altitude
-                FIX: "N/A",      // Fix GPS
+                Fix: "N/A",      // Fix GPS (corretto)
                 Heading: "N/A",  // Heading
                 HeadingD: "N/A", // HeadingD
                 Vel_GPS: "N/A"   // Velocità GPS
+            },
+            connectionData: {
+                serverIp: "N/A",
+                userId: "N/A"
             }
         };
     }
 
     componentDidMount() {
         this.updateData();
+        // Inizializza i dati di connessione
+        this.setState({
+            connectionData: {
+                serverIp: "lorenzogaspari.com",
+                userId: this.props.user_id || "N/A"
+            }
+        });
     }
 
     componentDidUpdate(prevProps) {
         if (this.context.skMessage !== prevProps.skMessage) {
             this.updateData();
         }
+        // Aggiorna user ID se cambia
+        if (this.props.user_id !== prevProps.user_id) {
+            this.setState(prevState => ({
+                connectionData: {
+                    ...prevState.connectionData,
+                    userId: this.props.user_id || "N/A"
+                }
+            }));
+        }
     }
 
     updateData = () => {
         const { skMessage } = this.context;
+
+        // Gestisci messaggi per IP del server
+        if (skMessage && skMessage.scope === "U" && skMessage.type === 1) {
+            this.setState(prevState => ({
+                connectionData: {
+                    ...prevState.connectionData,
+                    serverIp: skMessage.data_command || "lorenzogaspari.com"
+                }
+            }));
+        }
 
         if (skMessage && skMessage.scope === "H" && skMessage.type === 2 && skMessage.id_message === "HFALL") {
             try {
@@ -186,7 +216,7 @@ class DroneBoatInterface extends React.Component {
                 if (hfallData.Lat !== undefined) newPositionData.Lat = parseFloat(hfallData.Lat).toFixed(6) + "° N";
                 if (hfallData.Lon !== undefined) newPositionData.Lon = parseFloat(hfallData.Lon).toFixed(6) + "° E";
                 if (hfallData.Hmare !== undefined) newPositionData.Hmare = parseFloat(hfallData.Hmare).toFixed(2) + "m";
-                if (hfallData.FIX !== undefined) newPositionData.FIX = hfallData.FIX;
+                if (hfallData.Fix !== undefined) newPositionData.Fix = hfallData.Fix; // Fix corretto
                 if (hfallData.Heading !== undefined) newPositionData.Heading = parseFloat(hfallData.Heading).toFixed(2) + "°";
                 if (hfallData.HeadingD !== undefined) newPositionData.HeadingD = parseFloat(hfallData.HeadingD).toFixed(2) + "°";
                 if (hfallData.Vel_GPS !== undefined) newPositionData.Vel_GPS = parseFloat(hfallData.Vel_GPS).toFixed(2) + " kn";
@@ -207,18 +237,22 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         const { appst, user_id, setAppState } = this.props;
-        const { joystickData, orientationData, navigationData, energyData, motorsData, positionData } = this.state;
+        const { joystickData, orientationData, navigationData, energyData, motorsData, positionData, connectionData } = this.state;
+        const connectionStatus = this.getConnectionStatus();
 
         return (
             <>
                 {/* Header */}
                 <div style={styles.header}>
-                    <div style={styles.title}>DroneBoat Control</div>
-                    <div style={styles.statusIndicator}>
-                        <div style={styles.statusDot}></div>
-                        <div>Connesso</div>
+                    <div style={styles.titleSection}>
+                        <div style={styles.title}>DroneBoat Control</div>
+                        <div style={styles.userId}>User ID: {connectionData.userId}</div>
                     </div>
-                    <div>IP: 192.168.1.10</div>
+                    <div style={styles.statusIndicator}>
+                        <div style={{ ...styles.statusDot, backgroundColor: connectionStatus.color }}></div>
+                        <div>{connectionStatus.text}</div>
+                    </div>
+                    <div>IP: {connectionData.serverIp}</div>
                     <div style={styles.powerStatus}>
                         <div>GENERAZIONE: {energyData.EnergyP}</div>
                         <div>CONSUMO: {energyData.EnergyC}</div>
@@ -349,7 +383,7 @@ class DroneBoatInterface extends React.Component {
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>FIX:</span>
-                                <span style={styles.telemetryValue}>{positionData.FIX}</span>
+                                <span style={styles.telemetryValue}>{positionData.Fix}</span>
                             </div>
                             <div style={styles.telemetryItem}>
                                 <span style={styles.telemetryLabel}>Heading:</span>
@@ -494,12 +528,6 @@ class DroneBoatInterface extends React.Component {
                                 <JoystickReader stateapp={appst} userid={user_id} />
                             </div>
                         </div>
-
-                        {/* Connection Monitoring */}
-                        <div style={styles.monitoringSection}>
-                            <WebSocketMonitoring />
-                            <UserIdMonitoring userid={user_id} />
-                        </div>
                     </div>
                 </div>
             </>
@@ -527,6 +555,16 @@ const styles = {
     title: {
         fontSize: '18px',
         fontWeight: 'bold'
+    },
+    titleSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start'
+    },
+    userId: {
+        fontSize: '12px',
+        color: '#cccccc',
+        marginTop: '2px'
     },
     statusIndicator: {
         display: 'flex',
@@ -750,12 +788,5 @@ const styles = {
         borderRadius: '4px',
         border: '1px solid #ddd',
         marginBottom: '10px'
-    },
-    monitoringSection: {
-        backgroundColor: '#f8f9fa',
-        padding: '8px',
-        borderRadius: '5px',
-        fontSize: '11px',
-        border: '1px solid #e0e0e0'
     }
 };
