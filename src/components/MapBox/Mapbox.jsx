@@ -76,51 +76,73 @@ const MapboxMap = ({
 
     // Funzione per visualizzare la missione sulla mappa
     const visualizeMission = useCallback((waypoints) => {
-        if (!map.current || !waypoints || !Array.isArray(waypoints) || waypoints.length === 0) {
+        console.log('=== MAPBOX VISUALIZE MISSION DEBUG ===');
+        console.log('Received waypoints:', waypoints);
+        console.log('Map current:', map.current);
+        console.log('Is array:', Array.isArray(waypoints));
+        console.log('Length:', waypoints ? waypoints.length : 'N/A');
+
+        if (!map.current) {
+            console.log('❌ Map not initialized');
+            return;
+        }
+
+        if (!waypoints || !Array.isArray(waypoints) || waypoints.length === 0) {
+            console.log('❌ Invalid waypoints data');
             return;
         }
 
         // Prima pulisci qualsiasi visualizzazione precedente
         clearMissionVisualization();
 
-        console.log('Visualizing mission waypoints:', waypoints);
+        console.log('✅ Starting mission visualization...');
 
         const coordinates = [];
         const bounds = new mapboxgl.LngLatBounds();
+        let validWaypoints = 0;
 
         // Crea marker per ogni waypoint
         waypoints.forEach((waypoint, index) => {
+            console.log(`Processing waypoint ${index + 1}:`, waypoint);
+
             let lng, lat;
 
             // Gestisci diversi formati di waypoint
             if (waypoint.lng !== undefined && waypoint.lat !== undefined) {
                 lng = parseFloat(waypoint.lng);
                 lat = parseFloat(waypoint.lat);
+                console.log(`Format: lng/lat - ${lng}, ${lat}`);
             } else if (waypoint.longitude !== undefined && waypoint.latitude !== undefined) {
                 lng = parseFloat(waypoint.longitude);
                 lat = parseFloat(waypoint.latitude);
+                console.log(`Format: longitude/latitude - ${lng}, ${lat}`);
             } else if (waypoint.lon !== undefined && waypoint.lat !== undefined) {
                 lng = parseFloat(waypoint.lon);
                 lat = parseFloat(waypoint.lat);
+                console.log(`Format: lon/lat - ${lng}, ${lat}`);
             } else if (Array.isArray(waypoint) && waypoint.length >= 2) {
                 lng = parseFloat(waypoint[0]);
                 lat = parseFloat(waypoint[1]);
+                console.log(`Format: array - ${lng}, ${lat}`);
             } else if (waypoint.x !== undefined && waypoint.y !== undefined) {
                 lng = parseFloat(waypoint.x);
                 lat = parseFloat(waypoint.y);
+                console.log(`Format: x/y - ${lng}, ${lat}`);
             } else {
-                console.warn('Waypoint format not recognized:', waypoint);
+                console.warn('❌ Waypoint format not recognized:', waypoint);
                 return;
             }
 
             // Verifica che le coordinate siano valide
             if (isNaN(lng) || isNaN(lat)) {
-                console.warn('Invalid coordinates for waypoint:', waypoint);
+                console.warn('❌ Invalid coordinates for waypoint:', waypoint);
                 return;
             }
 
+            console.log(`✅ Valid coordinates: ${lng}, ${lat}`);
             coordinates.push([lng, lat]);
             bounds.extend([lng, lat]);
+            validWaypoints++;
 
             // Crea il marker per il waypoint
             const el = document.createElement('div');
@@ -139,6 +161,7 @@ const MapboxMap = ({
                 font-size: 12px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.3);
                 cursor: pointer;
+                z-index: 100;
             `;
             el.textContent = (index + 1).toString();
 
@@ -162,10 +185,15 @@ const MapboxMap = ({
                 .addTo(map.current);
 
             missionMarkersRef.current.push(marker);
+            console.log(`✅ Marker ${index + 1} added to map`);
         });
+
+        console.log(`✅ Total valid waypoints processed: ${validWaypoints}`);
+        console.log(`✅ Total coordinates: ${coordinates.length}`);
 
         // Disegna la linea che connette i waypoints se ci sono almeno 2 punti
         if (coordinates.length >= 2) {
+            console.log('✅ Drawing route line...');
             const geojson = {
                 type: 'Feature',
                 properties: {},
@@ -178,6 +206,21 @@ const MapboxMap = ({
             map.current.addSource('mission-route', {
                 type: 'geojson',
                 data: geojson
+            });
+
+            map.current.addLayer({
+                id: 'mission-route-outline',
+                type: 'line',
+                source: 'mission-route',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#ffffff',
+                    'line-width': 6,
+                    'line-opacity': 0.5
+                }
             });
 
             map.current.addLayer({
@@ -197,26 +240,12 @@ const MapboxMap = ({
 
             missionSourceRef.current = 'mission-route';
             missionLayerRef.current = 'mission-route';
-
-            // Aggiungi anche una linea più spessa trasparente per migliore visibilità
-            map.current.addLayer({
-                id: 'mission-route-outline',
-                type: 'line',
-                source: 'mission-route',
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#ffffff',
-                    'line-width': 6,
-                    'line-opacity': 0.5
-                }
-            }, 'mission-route'); // Inserisci sotto la linea principale
+            console.log('✅ Route line added to map');
         }
 
         // Centra la mappa sui waypoints della missione
         if (coordinates.length > 0) {
+            console.log('✅ Centering map on mission...');
             if (coordinates.length === 1) {
                 // Se c'è solo un waypoint, centra su quello
                 map.current.flyTo({
@@ -231,7 +260,10 @@ const MapboxMap = ({
                     maxZoom: 16
                 });
             }
+            console.log('✅ Map centered successfully');
         }
+
+        console.log('=== MISSION VISUALIZATION COMPLETE ===');
 
     }, [clearMissionVisualization, zoom]);
 
