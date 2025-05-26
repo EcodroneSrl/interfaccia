@@ -2,10 +2,7 @@ import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'jquery/dist/jquery.min.js';
 import 'bootstrap/dist/js/bootstrap.min.js';
-import { WebSocketMonitoring } from './components/WebSocketMonitoring';
-import { UserIdMonitoring } from './components/UserIdMonitoring';
-import { WebSocketProvider } from './components/Websockets';
-import { BoatSensorsData } from './components/BoatSensorsData';
+import { WebSocketProvider, WebSocketContext } from './components/Websockets';
 import { Missions } from './components/Missions/Missions';
 import { EcoMap } from './components/MultiComponents/EcoMap';
 import { ChangeAppState } from './components/StateMonitoring';
@@ -47,257 +44,378 @@ export default class App extends React.Component {
             <div style={styles.body}>
                 <WebSocketProvider uidcallback={setUserId}>
                     <EcoMap stateapp={appst} uuid={user_id}>
-                        {/* Header */}
-                        <div style={styles.header}>
-                            <div style={styles.title}>DroneBoat Control</div>
-                            <div style={styles.statusIndicator}>
-                                <div style={styles.statusDot}></div>
-                                <div>Connesso</div>
-                            </div>
-                            <div>IP: 192.168.1.10</div>
-                            <div style={styles.powerStatus}>
-                                <div>GENERAZIONE: 180W</div>
-                                <div>CONSUMO: 120W</div>
-                                <div style={styles.powerBar}></div>
-                            </div>
-                            <div style={styles.batteryPercent}>85%</div>
-                            <div style={styles.closeBtn}>X</div>
-                        </div>
-
-                        {/* Container */}
-                        <div style={styles.container}>
-                            {/* Left Sidebar */}
-                            <div style={styles.sidebar}>
-                                <div style={styles.sectionTitle}>Albero Missioni</div>
-                                <button style={styles.blueBtn}>Aggiorna</button>
-                                
-                                <div style={styles.treeItem}>/ (Root)</div>
-                                <div style={styles.treeItem}>Missioni</div>
-                                <div style={styles.treeItem}>Costiere</div>
-                                <div style={{...styles.treeItem, ...styles.selected}}>MB-3 | WP: 4</div>
-                                
-                                <div style={styles.btnGroup}>
-                                    <button style={styles.greenBtn}>Avvia</button>
-                                    <button style={styles.blueBtn}>Visualizza</button>
-                                    <button style={styles.redBtn}>Elimina</button>
-                                </div>
-
-                                <div style={styles.sectionTitle}>Modalità di Guida:</div>
-                                
-                                <div style={styles.dropdown}>
-                                    <button style={styles.blueBtn}>Teleguiadata ▼</button>
-                                </div>
-                                
-                                <div style={styles.dropdown}>
-                                    <button style={styles.greenBtn}>Autonoma ▼</button>
-                                </div>
-                                
-                                <button style={styles.redBtn}>INVIA</button>
-
-                                <div style={{...styles.sectionTitle, marginTop: '20px'}}>Crea Nuova Missione</div>
-                                <div style={styles.miniMap}>
-                                    <div style={{...styles.waypoint, top: '30%', left: '20%'}}>1</div>
-                                    <div style={{...styles.waypoint, top: '30%', left: '50%'}}>2</div>
-                                    <div style={{...styles.waypoint, top: '50%', left: '80%'}}>3</div>
-                                    <div style={{...styles.waypoint, top: '70%', left: '30%'}}>4</div>
-                                </div>
-                                <button style={styles.blueBtn}>Apri Editor</button>
-
-                                {/* State Controller */}
-                                <div style={{marginTop: '20px'}}>
-                                    <ChangeAppState changeState={setAppState} uuid={user_id} />
-                                </div>
-                            </div>
-
-                            {/* Main Content */}
-                            <div style={styles.mainContent}>
-                                {/* Camera View */}
-                                <div style={styles.cameraView}>
-                                    <h2>Camera Principale</h2>
-                                    <div style={styles.cameraOptions}>
-                                        <div style={styles.cameraOption}>
-                                            <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
-                                        </div>
-                                        <div style={styles.cameraOption}>
-                                            <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
-                                        </div>
-                                        <div style={styles.cameraOption}>
-                                            <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
-                                        </div>
-                                    </div>
-                                    <button style={{...styles.blueBtn, marginTop: '20px'}}>Cambia Vista</button>
-                                </div>
-                                
-                                {/* Map View */}
-                                <div style={styles.mapView}>
-                                    <h2 style={{color: 'white', padding: '10px'}}>Mappa Satellitare</h2>
-                                    <div style={styles.mapControls}>
-                                        <div style={styles.zoomControl}>
-                                            <span>Zoom</span>
-                                            <input type="range" min="1" max="100" defaultValue="50" />
-                                        </div>
-                                        <button style={styles.blueBtn}>Centra</button>
-                                    </div>
-                                    
-                                    {/* MapboxMap component */}
-                                    <div style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1}}>
-                                        <MapboxMap stateapp={appst} />
-                                    </div>
-
-                                    {/* Mission/Waypoint Forms */}
-                                    {appst === "MSS" && (
-                                        <div style={styles.overlayPanel}>
-                                            <Missions stateapp={appst} userid={user_id} />
-                                        </div>
-                                    )}
-                                    {appst === "WPY" && (
-                                        <div style={styles.overlayPanel}>
-                                            <MissionForm stateapp={appst} userid={user_id} />
-                                            <MarkerList stateapp={appst} userid={user_id} />
-                                        </div>
-                                    )}
-                                    
-                                    <div style={styles.mapInfoBottom}>
-                                        <div>TEL_MODE_2 - Con mantenimento rotta</div>
-                                        <div>Autonomia: 4.5h</div>
-                                        <div>Distanza: 120m</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Sidebar */}
-                            <div style={styles.rightSidebar}>
-                                <div style={styles.sectionTitle}>Telemetria</div>
-                                
-                                {/* Boat Sensors Data */}
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Dati Sensori</div>
-                                    <BoatSensorsData />
-                                </div>
-                                
-                                {/* Mock Telemetry Data */}
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Posizione</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Lat:</span>
-                                        <span style={styles.telemetryValue}>41.8827° N</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Lon:</span>
-                                        <span style={styles.telemetryValue}>12.4964° E</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Alt:</span>
-                                        <span style={styles.telemetryValue}>0.5m</span>
-                                    </div>
-                                </div>
-                                
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Orientamento</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Pitch:</span>
-                                        <span style={styles.telemetryValue}>2.1°</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Roll:</span>
-                                        <span style={styles.telemetryValue}>0.5°</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Yaw:</span>
-                                        <span style={styles.telemetryValue}>182°</span>
-                                    </div>
-                                </div>
-                                
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Navigazione</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Velocità:</span>
-                                        <span style={styles.telemetryValue}>3.2 kn</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Rotta:</span>
-                                        <span style={styles.telemetryValue}>182°</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Target:</span>
-                                        <span style={styles.telemetryValue}>20°</span>
-                                    </div>
-                                </div>
-                                
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Energia</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Consumo:</span>
-                                        <span style={{...styles.telemetryValue, color: 'red'}}>120W</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Generazione:</span>
-                                        <span style={{...styles.telemetryValue, color: 'green'}}>180W</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Efficienza:</span>
-                                        <span style={styles.telemetryValue}>150%</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Motori RPM</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Motore 1:</span>
-                                        <span style={{...styles.telemetryValue, color: 'orange'}}>1250</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Motore 2:</span>
-                                        <span style={{...styles.telemetryValue, color: 'orange'}}>1280</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Motore 3:</span>
-                                        <span style={{...styles.telemetryValue, color: 'orange'}}>1255</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Motore 4:</span>
-                                        <span style={{...styles.telemetryValue, color: 'orange'}}>1265</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Media:</span>
-                                        <span style={styles.telemetryValue}>1262.5 RPM</span>
-                                    </div>
-                                </div>
-                                
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Stato Sistema</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Temperatura:</span>
-                                        <span style={styles.telemetryValue}>28°C</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Umidità:</span>
-                                        <span style={styles.telemetryValue}>65%</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Autonomia:</span>
-                                        <span style={styles.telemetryValue}>4.5h</span>
-                                    </div>
-                                </div>
-
-                                {/* Joystick Reader - Compact Version */}
-                                <div style={styles.joystickSection}>
-                                    <div style={styles.sectionTitle}>Controllo Joystick</div>
-                                    <div style={{fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left'}}>
-                                        <JoystickReader stateapp={appst} userid={user_id} />
-                                    </div>
-                                </div>
-
-                                {/* Connection Monitoring */}
-                                <div style={styles.monitoringSection}>
-                                    <WebSocketMonitoring />
-                                    <UserIdMonitoring userid={user_id} />
-                                </div>
-                            </div>
-                        </div>
+                        <DroneBoatInterface
+                            appst={appst}
+                            user_id={user_id}
+                            setAppState={setAppState}
+                        />
                     </EcoMap>
                 </WebSocketProvider>
             </div>
+        );
+    }
+}
+
+// Componente separato che gestisce l'interfaccia e i dati telemetrici
+class DroneBoatInterface extends React.Component {
+    static contextType = WebSocketContext;
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            telemetryData: {
+                // Posizione
+                lat: "N/A",
+                lon: "N/A",
+                alt: "N/A",
+                // Orientamento
+                pitch: "N/A",
+                roll: "N/A",
+                yaw: "N/A",
+                // Navigazione
+                speed: "N/A",
+                heading: "N/A",
+                target: "N/A",
+                // Energia
+                consumption: "N/A",
+                generation: "N/A",
+                efficiency: "N/A",
+                // Motori
+                motor1: "N/A",
+                motor2: "N/A",
+                motor3: "N/A",
+                motor4: "N/A",
+                motorAvg: "N/A",
+                // Sistema
+                temperature: "N/A",
+                humidity: "N/A",
+                autonomy: "N/A"
+            }
+        };
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        const { skMessage } = this.context;
+
+        if (skMessage && skMessage !== prevProps.skMessage) {
+            this.updateTelemetryData(skMessage);
+        }
+    }
+
+    getConnectionStatus = () => {
+        const { wsState } = this.context;
+        const connectionStates = {
+            0: { text: "Messaging...", color: "#3498db" },
+            1: { text: "Connesso", color: "#2ecc71" },
+            2: { text: "Disconnessione...", color: "#f39c12" },
+            3: { text: "Disconnesso", color: "#e74c3c" },
+            4: { text: "Non Connesso", color: "#95a5a6" }
+        };
+        return connectionStates[wsState] || connectionStates[4];
+    };
+
+    updateTelemetryData = (message) => {
+        if (!message) return;
+
+        let newTelemetryData = { ...this.state.telemetryData };
+
+        // Gestione dati HFALL
+        if (message.scope === "H" && message.type === 2 && message.id_message === "HFALL") {
+            try {
+                const hfallData = JSON.parse(message.data_command);
+
+                // Mappa i dati HFALL alle sezioni appropriate
+                if (hfallData.Lat !== undefined) newTelemetryData.lat = hfallData.Lat + "° N";
+                if (hfallData.Lon !== undefined) newTelemetryData.lon = hfallData.Lon + "° E";
+                if (hfallData.Alt !== undefined) newTelemetryData.alt = hfallData.Alt + "m";
+
+                if (hfallData.Pitch !== undefined) newTelemetryData.pitch = hfallData.Pitch + "°";
+                if (hfallData.Roll !== undefined) newTelemetryData.roll = hfallData.Roll + "°";
+                if (hfallData.Yaw !== undefined) newTelemetryData.yaw = hfallData.Yaw + "°";
+
+                if (hfallData.Speed !== undefined) newTelemetryData.speed = hfallData.Speed + " kn";
+                if (hfallData.Heading !== undefined) newTelemetryData.heading = hfallData.Heading + "°";
+                if (hfallData.Target !== undefined) newTelemetryData.target = hfallData.Target + "°";
+
+                if (hfallData.Consumption !== undefined) newTelemetryData.consumption = hfallData.Consumption + "W";
+                if (hfallData.Generation !== undefined) newTelemetryData.generation = hfallData.Generation + "W";
+                if (hfallData.Efficiency !== undefined) newTelemetryData.efficiency = hfallData.Efficiency + "%";
+
+                if (hfallData.Motor1 !== undefined) newTelemetryData.motor1 = hfallData.Motor1;
+                if (hfallData.Motor2 !== undefined) newTelemetryData.motor2 = hfallData.Motor2;
+                if (hfallData.Motor3 !== undefined) newTelemetryData.motor3 = hfallData.Motor3;
+                if (hfallData.Motor4 !== undefined) newTelemetryData.motor4 = hfallData.Motor4;
+
+                // Calcola media motori se disponibili
+                if (hfallData.Motor1 && hfallData.Motor2 && hfallData.Motor3 && hfallData.Motor4) {
+                    const avg = ((hfallData.Motor1 + hfallData.Motor2 + hfallData.Motor3 + hfallData.Motor4) / 4).toFixed(1);
+                    newTelemetryData.motorAvg = avg + " RPM";
+                }
+
+                if (hfallData.Temperature !== undefined) newTelemetryData.temperature = hfallData.Temperature + "°C";
+                if (hfallData.Humidity !== undefined) newTelemetryData.humidity = hfallData.Humidity + "%";
+                if (hfallData.Autonomy !== undefined) newTelemetryData.autonomy = hfallData.Autonomy + "h";
+
+                this.setState({ telemetryData: newTelemetryData });
+            } catch (error) {
+                console.error('Error parsing HFALL data:', error);
+            }
+        }
+
+        // Gestione dati IMU (se disponibili)
+        if (message.scope === "S" && message.type === "1" && message.id_message === "ImuData") {
+            try {
+                const imuData = JSON.parse(message.data_command);
+                if (imuData.Yaw !== undefined) newTelemetryData.yaw = imuData.Yaw + "°";
+                if (imuData.Pitch !== undefined) newTelemetryData.pitch = imuData.Pitch + "°";
+                if (imuData.Roll !== undefined) newTelemetryData.roll = imuData.Roll + "°";
+
+                this.setState({ telemetryData: newTelemetryData });
+            } catch (error) {
+                console.error('Error parsing IMU data:', error);
+            }
+        }
+    };
+
+    render() {
+        const { appst, user_id, setAppState } = this.props;
+        const { telemetryData } = this.state;
+        const connectionStatus = this.getConnectionStatus();
+
+        return (
+            <>
+                {/* Header */}
+                <div style={styles.header}>
+                    <div style={styles.title}>DroneBoat Control</div>
+                    <div style={styles.statusIndicator}>
+                        <div style={{ ...styles.statusDot, backgroundColor: connectionStatus.color }}></div>
+                        <div>{connectionStatus.text}</div>
+                    </div>
+                    <div>User ID: {user_id !== "NNN" ? user_id : "N/A"}</div>
+                    <div>Server IP: lorenzogaspari.com</div>
+                    <div style={styles.powerStatus}>
+                        <div>GENERAZIONE: {telemetryData.generation}</div>
+                        <div>CONSUMO: {telemetryData.consumption}</div>
+                        <div style={styles.powerBar}></div>
+                    </div>
+                    <div style={styles.batteryPercent}>85%</div>
+                    <div style={styles.closeBtn}>X</div>
+                </div>
+
+                {/* Container */}
+                <div style={styles.container}>
+                    {/* Left Sidebar */}
+                    <div style={styles.sidebar}>
+                        <div style={styles.sectionTitle}>Albero Missioni</div>
+                        <button style={styles.blueBtn}>Aggiorna</button>
+
+                        <div style={styles.treeItem}>/ (Root)</div>
+                        <div style={styles.treeItem}>Missioni</div>
+                        <div style={styles.treeItem}>Costiere</div>
+                        <div style={{ ...styles.treeItem, ...styles.selected }}>MB-3 | WP: 4</div>
+
+                        <div style={styles.btnGroup}>
+                            <button style={styles.greenBtn}>Avvia</button>
+                            <button style={styles.blueBtn}>Visualizza</button>
+                            <button style={styles.redBtn}>Elimina</button>
+                        </div>
+
+                        <div style={styles.sectionTitle}>Modalità di Guida:</div>
+
+                        <div style={styles.dropdown}>
+                            <button style={styles.blueBtn}>Teleguiadata ▼</button>
+                        </div>
+
+                        <div style={styles.dropdown}>
+                            <button style={styles.greenBtn}>Autonoma ▼</button>
+                        </div>
+
+                        <button style={styles.redBtn}>INVIA</button>
+
+                        <div style={{ ...styles.sectionTitle, marginTop: '20px' }}>Crea Nuova Missione</div>
+                        <div style={styles.miniMap}>
+                            <div style={{ ...styles.waypoint, top: '30%', left: '20%' }}>1</div>
+                            <div style={{ ...styles.waypoint, top: '30%', left: '50%' }}>2</div>
+                            <div style={{ ...styles.waypoint, top: '50%', left: '80%' }}>3</div>
+                            <div style={{ ...styles.waypoint, top: '70%', left: '30%' }}>4</div>
+                        </div>
+                        <button style={styles.blueBtn}>Apri Editor</button>
+
+                        {/* State Controller */}
+                        <div style={{ marginTop: '20px' }}>
+                            <ChangeAppState changeState={setAppState} uuid={user_id} />
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div style={styles.mainContent}>
+                        {/* Camera View */}
+                        <div style={styles.cameraView}>
+                            <h2>Camera Principale</h2>
+                            <div style={styles.cameraOptions}>
+                                <div style={styles.cameraOption}>
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                </div>
+                                <div style={styles.cameraOption}>
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
+                                </div>
+                                <div style={styles.cameraOption}>
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
+                                </div>
+                            </div>
+                            <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
+                        </div>
+
+                        {/* Map View */}
+                        <div style={styles.mapView}>
+                            <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
+
+                            {/* MapboxMap component with satellite style */}
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+                                <MapboxMap stateapp={appst} mapStyle="satellite" />
+                            </div>
+
+                            {/* Mission/Waypoint Forms */}
+                            {appst === "MSS" && (
+                                <div style={styles.overlayPanel}>
+                                    <Missions stateapp={appst} userid={user_id} />
+                                </div>
+                            )}
+                            {appst === "WPY" && (
+                                <div style={styles.overlayPanel}>
+                                    <MissionForm stateapp={appst} userid={user_id} />
+                                    <MarkerList stateapp={appst} userid={user_id} />
+                                </div>
+                            )}
+
+                            <div style={styles.mapInfoBottom}>
+                                <div>TEL_MODE_2 - Con mantenimento rotta</div>
+                                <div>Autonomia: {telemetryData.autonomy}</div>
+                                <div>Distanza: 120m</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Sidebar */}
+                    <div style={styles.rightSidebar}>
+                        <div style={styles.sectionTitle}>Telemetria</div>
+
+                        {/* Real Telemetry Data */}
+                        <div style={styles.telemetrySection}>
+                            <div style={styles.sectionTitle}>Posizione</div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Lat:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.lat}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Lon:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.lon}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Alt:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.alt}</span>
+                            </div>
+                        </div>
+
+                        <div style={styles.telemetrySection}>
+                            <div style={styles.sectionTitle}>Orientamento</div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Pitch:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.pitch}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Roll:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.roll}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Yaw:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.yaw}</span>
+                            </div>
+                        </div>
+
+                        <div style={styles.telemetrySection}>
+                            <div style={styles.sectionTitle}>Navigazione</div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Velocità:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.speed}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Rotta:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.heading}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Target:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.target}</span>
+                            </div>
+                        </div>
+
+                        <div style={styles.telemetrySection}>
+                            <div style={styles.sectionTitle}>Energia</div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Consumo:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'red' }}>{telemetryData.consumption}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Generazione:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'green' }}>{telemetryData.generation}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Efficienza:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.efficiency}</span>
+                            </div>
+                        </div>
+
+                        <div style={styles.telemetrySection}>
+                            <div style={styles.sectionTitle}>Motori RPM</div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Motore 1:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>{telemetryData.motor1}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Motore 2:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>{telemetryData.motor2}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Motore 3:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>{telemetryData.motor3}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Motore 4:</span>
+                                <span style={{ ...styles.telemetryValue, color: 'orange' }}>{telemetryData.motor4}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Media:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.motorAvg}</span>
+                            </div>
+                        </div>
+
+                        <div style={styles.telemetrySection}>
+                            <div style={styles.sectionTitle}>Stato Sistema</div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Temperatura:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.temperature}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Umidità:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.humidity}</span>
+                            </div>
+                            <div style={styles.telemetryItem}>
+                                <span style={styles.telemetryLabel}>Autonomia:</span>
+                                <span style={styles.telemetryValue}>{telemetryData.autonomy}</span>
+                            </div>
+                        </div>
+
+                        {/* Joystick Reader - Compact Version */}
+                        <div style={styles.joystickSection}>
+                            <div style={styles.sectionTitle}>Controllo Joystick</div>
+                            <div style={{ fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left' }}>
+                                <JoystickReader stateapp={appst} userid={user_id} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </>
         );
     }
 }
@@ -450,20 +568,6 @@ const styles = {
         position: 'relative',
         minHeight: '400px'
     },
-    mapControls: {
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        backgroundColor: 'white',
-        padding: '10px',
-        borderRadius: '5px',
-        zIndex: 10
-    },
-    zoomControl: {
-        display: 'flex',
-        alignItems: 'center',
-        marginBottom: '5px'
-    },
     telemetrySection: {
         backgroundColor: 'white',
         marginBottom: '10px',
@@ -551,13 +655,6 @@ const styles = {
         padding: '8px',
         marginBottom: '10px',
         borderRadius: '5px',
-        border: '1px solid #e0e0e0'
-    },
-    monitoringSection: {
-        backgroundColor: '#f8f9fa',
-        padding: '8px',
-        borderRadius: '5px',
-        fontSize: '11px',
         border: '1px solid #e0e0e0'
     }
 };
