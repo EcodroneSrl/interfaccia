@@ -137,65 +137,63 @@ class DroneBoatInterface extends React.Component {
                 this.setState({ userId: skMessage.id_message });
             }
 
-            // Gestisci messaggi per le missioni con DEBUG
+            // Gestisci messaggi per le missioni - VERSIONE SICURA
             if (skMessage.scope === "M") {
-                console.log('=== MISSION MESSAGE RECEIVED ===');
-                console.log('Message Type:', skMessage.type);
-                console.log('Message ID:', skMessage.id_message);
-                console.log('Message Data:', skMessage.data_command);
+                console.log('Mission message received - Type:', skMessage.type);
 
                 if (skMessage.type === 1) {
                     // Albero delle missioni
                     try {
                         const treeData = JSON.parse(skMessage.data_command);
-                        console.log('✅ Mission tree parsed successfully:', treeData);
                         this.setState({ missionsTree: treeData });
+                        console.log('Mission tree loaded successfully');
                     } catch (parseError) {
-                        console.error('❌ Error parsing missions tree:', parseError);
+                        console.error('Error parsing missions tree:', parseError);
                     }
                 } else if (skMessage.type === 2) {
-                    // Waypoints della missione (nuovo tipo di messaggio)
+                    // Waypoints della missione
                     try {
                         const waypointsData = JSON.parse(skMessage.data_command);
-                        console.log('✅ Mission waypoints parsed successfully:', waypointsData);
-                        console.log('Waypoints count:', Array.isArray(waypointsData) ? waypointsData.length : 'Not an array');
-                        this.setState({
-                            missionWaypoints: waypointsData,
-                            showMissionOnMap: true
-                        });
-                    } catch (parseError) {
-                        console.error('❌ Error parsing mission waypoints:', parseError);
-                        console.log('Raw waypoints data:', skMessage.data_command);
+                        console.log('Mission waypoints received:', waypointsData.length || 'unknown count');
 
-                        // Prova a gestire il caso in cui i dati non siano JSON
-                        if (typeof skMessage.data_command === 'string') {
-                            // Prova a parsare come CSV o formato diverso
-                            console.log('Trying to parse as non-JSON format...');
+                        // Aggiorna in modo sicuro
+                        this.setState(prevState => ({
+                            missionWaypoints: waypointsData,
+                            showMissionOnMap: false // Non attivare automaticamente
+                        }));
+
+                    } catch (parseError) {
+                        console.error('Error parsing waypoints:', parseError);
+                        console.log('Raw data:', skMessage.data_command);
+
+                        // Tentativo di parsing alternativo semplificato
+                        if (typeof skMessage.data_command === 'string' && skMessage.data_command.includes(',')) {
                             try {
-                                // Esempio: se i dati arrivano come stringa separata da virgole
-                                const lines = skMessage.data_command.split('\n');
-                                const waypoints = lines.map((line, index) => {
+                                const lines = skMessage.data_command.split('\n').filter(line => line.trim());
+                                const waypoints = [];
+
+                                lines.forEach((line, index) => {
                                     const parts = line.split(',');
                                     if (parts.length >= 2) {
-                                        return {
-                                            lat: parseFloat(parts[0]),
-                                            lng: parseFloat(parts[1]),
-                                            alt: parts.length > 2 ? parseFloat(parts[2]) : 0,
-                                            index: index
-                                        };
+                                        const lat = parseFloat(parts[0]);
+                                        const lng = parseFloat(parts[1]);
+                                        if (!isNaN(lat) && !isNaN(lng)) {
+                                            waypoints.push({
+                                                lat: lat,
+                                                lng: lng,
+                                                alt: parts.length > 2 ? parseFloat(parts[2]) || 0 : 0,
+                                                index: index
+                                            });
+                                        }
                                     }
-                                    return null;
-                                }).filter(wp => wp !== null);
+                                });
 
                                 if (waypoints.length > 0) {
-                                    console.log('✅ Parsed as CSV format:', waypoints);
-                                    this.setState({
-                                        missionWaypoints: waypoints,
-                                        showMissionOnMap: true
-                                    });
+                                    console.log('Parsed as CSV format:', waypoints.length, 'waypoints');
+                                    this.setState({ missionWaypoints: waypoints });
                                 }
                             } catch (csvError) {
-                                console.error('❌ Failed to parse as CSV too:', csvError);
+                                console.error('Failed to parse as CSV:', csvError);
                             }
                         }
                     }
@@ -240,104 +238,61 @@ class DroneBoatInterface extends React.Component {
         }
     };
 
-    // Funzione per gestire la selezione di una missione con DEBUG migliorato
+    // Funzione per gestire la selezione di una missione - VERSIONE SICURA
     handleMissionSelect = (filePath) => {
         const { sendMessage } = this.context;
 
         try {
-            console.log('=== MISSION SELECTION DEBUG ===');
-            console.log('Selected file path:', filePath);
+            console.log('Selecting mission:', filePath);
 
+            // Aggiorna lo state in modo sicuro
             this.setState({
                 selectedMission: filePath,
-                showMissionOnMap: false, // Reset visualizzazione precedente
-                missionWaypoints: null   // Reset waypoints precedenti
+                showMissionOnMap: false,
+                missionWaypoints: null
             });
 
             // Richiedi i waypoint della missione selezionata
             if (sendMessage && filePath.endsWith('.bin')) {
-                const correctedPath = encodeURIComponent(filePath.trim());
+                console.log('Requesting waypoints...');
 
-                // Prova diversi tipi di messaggio per richiedere i waypoints
-                console.log('Requesting waypoints with different message types...');
-
-                // Tipo 1: Messaggio originale
-                const msgData1 = {
+                // UN SOLO messaggio per evitare spam
+                const msgData = {
                     scope: "M",
                     type: 2,
                     id_message: "GetWaypoints",
-                    data_command: correctedPath
+                    data_command: filePath.trim()
                 };
-                console.log('Sending message type 1:', msgData1);
-                sendMessage(msgData1);
 
-                // Tipo 2: Messaggio alternativo (potrebbe essere type 1 con id diverso)
-                setTimeout(() => {
-                    const msgData2 = {
-                        scope: "M",
-                        type: 1,
-                        id_message: "LoadMission",
-                        data_command: correctedPath
-                    };
-                    console.log('Sending message type 2:', msgData2);
-                    sendMessage(msgData2);
-                }, 100);
-
-                // Tipo 3: Messaggio con path non encodato
-                setTimeout(() => {
-                    const msgData3 = {
-                        scope: "M",
-                        type: 2,
-                        id_message: "NNN",
-                        data_command: filePath.trim()
-                    };
-                    console.log('Sending message type 3:', msgData3);
-                    sendMessage(msgData3);
-                }, 200);
-
-            } else {
-                console.log('SendMessage not available or file is not .bin');
+                sendMessage(msgData);
             }
         } catch (error) {
-            console.error('❌ Error selecting mission:', error);
+            console.error('Error selecting mission:', error);
         }
     };
 
-    // Funzione per visualizzare la missione sulla mappa con DEBUG
+    // Funzione per visualizzare la missione sulla mappa - VERSIONE SICURA
     handleVisualizeMission = () => {
         const { selectedMission, missionWaypoints } = this.state;
-        const { setAppState } = this.props;
 
         try {
-            console.log('=== VISUALIZE MISSION DEBUG ===');
-            console.log('Selected Mission:', selectedMission);
-            console.log('Mission Waypoints:', missionWaypoints);
-            console.log('Waypoints Type:', typeof missionWaypoints);
-            console.log('Is Array:', Array.isArray(missionWaypoints));
+            console.log('Visualizing mission:', selectedMission);
+            console.log('Waypoints available:', !!missionWaypoints);
 
             if (selectedMission && missionWaypoints) {
-                // Mostra la missione sulla mappa
-                this.setState({ showMissionOnMap: true });
-
-                // Cambia lo stato dell'app per mostrare la mappa (se necessario)
-                if (setAppState) {
-                    setAppState("MAP");
-                }
-
-                console.log('✅ Mission visualization activated');
-                console.log('Show Mission On Map:', true);
+                // Mostra la missione sulla mappa SENZA cambiare appState
+                this.setState({ showMissionOnMap: true }, () => {
+                    console.log('Mission visualization activated successfully');
+                });
             } else if (selectedMission && !missionWaypoints) {
-                // Richiedi nuovamente i waypoints se non sono stati caricati
-                console.log('⚠️ Mission selected but no waypoints, requesting...');
-                this.handleMissionSelect(selectedMission);
-                alert('Caricamento waypoints in corso...');
+                alert('Caricando waypoints della missione...');
+                // Non richiamare handleMissionSelect per evitare loop
             } else {
-                console.log('❌ No mission selected');
-                alert('Seleziona prima una missione');
+                alert('Seleziona prima una missione dal menu');
             }
         } catch (error) {
-            console.error('❌ Error visualizing mission:', error);
-            alert('Errore durante la visualizzazione della missione: ' + error.message);
+            console.error('Error visualizing mission:', error);
+            alert('Errore durante la visualizzazione: ' + error.message);
         }
     };
 
