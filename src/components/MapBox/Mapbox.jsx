@@ -78,7 +78,7 @@ const MapboxMap = ({
     const visualizeMission = useCallback((waypoints) => {
         console.log('=== MAPBOX VISUALIZE MISSION DEBUG ===');
         console.log('Received waypoints:', waypoints);
-        console.log('Map current:', map.current);
+        console.log('Map current:', !!map.current);
         console.log('Is array:', Array.isArray(waypoints));
         console.log('Length:', waypoints ? waypoints.length : 'N/A');
 
@@ -107,7 +107,7 @@ const MapboxMap = ({
 
             let lng, lat;
 
-            // Gestisci diversi formati di waypoint
+            // Gestisci diversi formati di waypoint con più controlli
             if (waypoint.lng !== undefined && waypoint.lat !== undefined) {
                 lng = parseFloat(waypoint.lng);
                 lat = parseFloat(waypoint.lat);
@@ -130,12 +130,25 @@ const MapboxMap = ({
                 console.log(`Format: x/y - ${lng}, ${lat}`);
             } else {
                 console.warn('❌ Waypoint format not recognized:', waypoint);
+                console.warn('Available properties:', Object.keys(waypoint));
                 return;
             }
 
             // Verifica che le coordinate siano valide
             if (isNaN(lng) || isNaN(lat)) {
                 console.warn('❌ Invalid coordinates for waypoint:', waypoint);
+                return;
+            }
+
+            // Verifica che le coordinate non siano zero (spesso indica dati non validi)
+            if (lng === 0 && lat === 0) {
+                console.warn('❌ Zero coordinates detected (likely invalid):', waypoint);
+                return;
+            }
+
+            // Verifica che le coordinate siano in un range ragionevole
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.warn('❌ Coordinates out of valid range:', waypoint);
                 return;
             }
 
@@ -176,6 +189,8 @@ const MapboxMap = ({
                     Lng: ${lng.toFixed(6)}°
                     ${waypoint.altitude ? `<br>Alt: ${waypoint.altitude}m` : ''}
                     ${waypoint.speed ? `<br>Speed: ${waypoint.speed} kn` : ''}
+                    ${waypoint.navMode !== undefined ? `<br>NavMode: ${waypoint.navMode}` : ''}
+                    ${waypoint.pointType !== undefined ? `<br>Type: ${waypoint.pointType}` : ''}
                 </div>
             `);
 
@@ -191,76 +206,90 @@ const MapboxMap = ({
         console.log(`✅ Total valid waypoints processed: ${validWaypoints}`);
         console.log(`✅ Total coordinates: ${coordinates.length}`);
 
+        if (validWaypoints === 0) {
+            console.error('❌ No valid waypoints found to display');
+            alert('Nessun waypoint valido trovato nella missione selezionata.');
+            return;
+        }
+
         // Disegna la linea che connette i waypoints se ci sono almeno 2 punti
         if (coordinates.length >= 2) {
             console.log('✅ Drawing route line...');
-            const geojson = {
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                    type: 'LineString',
-                    coordinates: coordinates
-                }
-            };
+            try {
+                const geojson = {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: coordinates
+                    }
+                };
 
-            map.current.addSource('mission-route', {
-                type: 'geojson',
-                data: geojson
-            });
+                map.current.addSource('mission-route', {
+                    type: 'geojson',
+                    data: geojson
+                });
 
-            map.current.addLayer({
-                id: 'mission-route-outline',
-                type: 'line',
-                source: 'mission-route',
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#ffffff',
-                    'line-width': 6,
-                    'line-opacity': 0.5
-                }
-            });
+                map.current.addLayer({
+                    id: 'mission-route-outline',
+                    type: 'line',
+                    source: 'mission-route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#ffffff',
+                        'line-width': 6,
+                        'line-opacity': 0.5
+                    }
+                });
 
-            map.current.addLayer({
-                id: 'mission-route',
-                type: 'line',
-                source: 'mission-route',
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#FF6B35',
-                    'line-width': 4,
-                    'line-opacity': 0.8
-                }
-            });
+                map.current.addLayer({
+                    id: 'mission-route',
+                    type: 'line',
+                    source: 'mission-route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#FF6B35',
+                        'line-width': 4,
+                        'line-opacity': 0.8
+                    }
+                });
 
-            missionSourceRef.current = 'mission-route';
-            missionLayerRef.current = 'mission-route';
-            console.log('✅ Route line added to map');
+                missionSourceRef.current = 'mission-route';
+                missionLayerRef.current = 'mission-route';
+                console.log('✅ Route line added to map');
+            } catch (error) {
+                console.error('❌ Error drawing route line:', error);
+            }
         }
 
         // Centra la mappa sui waypoints della missione
         if (coordinates.length > 0) {
             console.log('✅ Centering map on mission...');
-            if (coordinates.length === 1) {
-                // Se c'è solo un waypoint, centra su quello
-                map.current.flyTo({
-                    center: coordinates[0],
-                    zoom: Math.max(zoom, 14),
-                    essential: true,
-                });
-            } else {
-                // Se ci sono più waypoints, mostra tutti
-                map.current.fitBounds(bounds, {
-                    padding: { top: 50, bottom: 50, left: 50, right: 50 },
-                    maxZoom: 16
-                });
+            try {
+                if (coordinates.length === 1) {
+                    // Se c'è solo un waypoint, centra su quello
+                    map.current.flyTo({
+                        center: coordinates[0],
+                        zoom: Math.max(zoom, 14),
+                        essential: true,
+                    });
+                } else {
+                    // Se ci sono più waypoints, mostra tutti
+                    map.current.fitBounds(bounds, {
+                        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                        maxZoom: 16
+                    });
+                }
+                console.log('✅ Map centered successfully');
+            } catch (error) {
+                console.error('❌ Error centering map:', error);
             }
-            console.log('✅ Map centered successfully');
         }
 
         console.log('=== MISSION VISUALIZATION COMPLETE ===');
@@ -269,14 +298,37 @@ const MapboxMap = ({
 
     // Effect per gestire la visualizzazione della missione
     useEffect(() => {
-        if (missionWaypoints && selectedMission) {
-            console.log('Mission waypoints received for visualization:', missionWaypoints);
+        console.log('=== MAPBOX MISSION EFFECT TRIGGERED ===');
+        console.log('missionWaypoints:', missionWaypoints);
+        console.log('selectedMission:', selectedMission);
+        console.log('missionWaypoints is array:', Array.isArray(missionWaypoints));
+        console.log('missionWaypoints length:', missionWaypoints ? missionWaypoints.length : 'N/A');
+
+        if (missionWaypoints && selectedMission && Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
+            console.log('✅ Proceeding with mission visualization...');
             visualizeMission(missionWaypoints);
         } else {
+            console.log('❌ Conditions not met for visualization, clearing...');
             // Se non ci sono waypoints o missione selezionata, pulisci
             clearMissionVisualization();
         }
     }, [missionWaypoints, selectedMission, visualizeMission, clearMissionVisualization]);
+
+    // Aggiungi anche questo useEffect per debug delle props
+    useEffect(() => {
+        console.log('=== MAPBOX PROPS DEBUG ===');
+        console.log('Props received:');
+        console.log('- stateapp:', stateapp);
+        console.log('- mapStyle:', mapStyle);
+        console.log('- missionWaypoints:', missionWaypoints);
+        console.log('- selectedMission:', selectedMission);
+        console.log('- missionWaypoints type:', typeof missionWaypoints);
+        console.log('- missionWaypoints is array:', Array.isArray(missionWaypoints));
+        if (Array.isArray(missionWaypoints)) {
+            console.log('- waypoints count:', missionWaypoints.length);
+            console.log('- first waypoint:', missionWaypoints[0]);
+        }
+    }, [stateapp, mapStyle, missionWaypoints, selectedMission]);
 
     useEffect(() => {
 

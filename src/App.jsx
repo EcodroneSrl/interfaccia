@@ -182,6 +182,11 @@ class DroneBoatInterface extends React.Component {
                             this.setState({
                                 missionWaypoints: waypointsData,
                                 showMissionOnMap: false
+                            }, () => {
+                                // Dopo aver aggiornato i waypoints, controlla se dobbiamo visualizzarli
+                                setTimeout(() => {
+                                    this.checkAndVisualizeMission();
+                                }, 100);
                             });
                         }
 
@@ -197,6 +202,11 @@ class DroneBoatInterface extends React.Component {
                                     this.setState({
                                         missionWaypoints: csvData.waypoints,
                                         missionInfo: csvData.missionInfo
+                                    }, () => {
+                                        // Dopo aver aggiornato i waypoints, controlla se dobbiamo visualizzarli
+                                        setTimeout(() => {
+                                            this.checkAndVisualizeMission();
+                                        }, 100);
                                     });
                                 }
                             } catch (csvError) {
@@ -397,31 +407,80 @@ class DroneBoatInterface extends React.Component {
     };
 
     handleVisualizeMission = () => {
-        const { selectedMission, missionWaypoints } = this.state;
+        const { selectedMission, missionWaypoints, isLoadingWaypoints } = this.state;
+        const { sendMessage } = this.context;
 
         try {
             console.log('👁️ Visualizzazione missione:', selectedMission);
             console.log('Waypoints disponibili:', !!missionWaypoints);
+            console.log('Loading waypoints:', isLoadingWaypoints);
 
-            if (selectedMission && typeof selectedMission === 'string') {
-                if (missionWaypoints && Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
-                    this.setState({ showMissionOnMap: true }, () => {
-                        console.log('✅ Visualizzazione missione attivata');
-                    });
-                } else {
-                    alert('Waypoints non ancora caricati. Riprova tra qualche secondo o usa "Test Waypoints".');
-                }
-            } else {
+            if (!selectedMission || typeof selectedMission !== 'string' || selectedMission.trim() === '') {
                 alert('Seleziona prima una missione dal menu ad albero');
+                return;
             }
+
+            // Se i waypoints sono già disponibili, visualizza immediatamente
+            if (missionWaypoints && Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
+                this.setState({ showMissionOnMap: true }, () => {
+                    console.log('✅ Visualizzazione missione attivata (waypoints già disponibili)');
+                });
+                return;
+            }
+
+            // Se stiamo già caricando i waypoints, aspetta
+            if (isLoadingWaypoints) {
+                alert('Caricamento waypoints in corso... Riprova tra qualche secondo.');
+                return;
+            }
+
+            // Se non ci sono waypoints e non stiamo caricando, richiedi i waypoints
+            console.log('🔄 Richiesta waypoints per visualizzazione...');
+
+            this.setState({ isLoadingWaypoints: true }, () => {
+                if (sendMessage) {
+                    const msgData = {
+                        scope: "M",
+                        type: 2,
+                        id_message: "GetWaypoints",
+                        data_command: selectedMission.trim()
+                    };
+                    sendMessage(msgData);
+                    console.log('✅ Richiesta waypoints inviata per visualizzazione:', msgData);
+
+                    // Dopo aver inviato la richiesta, aspetta un momento e poi controlla se visualizzare
+                    setTimeout(() => {
+                        // Questa funzione verrà chiamata dopo che updateData ha processato la risposta
+                        this.checkAndVisualizeMission();
+                    }, 100);
+                } else {
+                    console.error('❌ SendMessage non disponibile');
+                    this.setState({ isLoadingWaypoints: false });
+                    alert('Errore di connessione. Impossibile richiedere i waypoints.');
+                }
+            });
+
         } catch (error) {
             console.error('❌ Errore visualizzazione missione:', error);
+            this.setState({ isLoadingWaypoints: false });
             alert('Errore durante la visualizzazione: ' + error.message);
         }
     };
 
     handleHideMission = () => {
         this.setState({ showMissionOnMap: false });
+    };
+
+    // Aggiungi questa nuova funzione helper
+    checkAndVisualizeMission = () => {
+        const { missionWaypoints, isLoadingWaypoints } = this.state;
+
+        // Se non stiamo più caricando e abbiamo i waypoints, visualizza
+        if (!isLoadingWaypoints && missionWaypoints && Array.isArray(missionWaypoints) && missionWaypoints.length > 0) {
+            this.setState({ showMissionOnMap: true }, () => {
+                console.log('✅ Visualizzazione missione attivata dopo caricamento waypoints');
+            });
+        }
     };
 
     // Funzione per caricare waypoints di test
