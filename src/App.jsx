@@ -1755,15 +1755,15 @@ const styles = {
         top: '10px',
         left: '10px',
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: '8px 12px',
-        borderRadius: '5px',
-        maxWidth: '280px',
-        maxHeight: '60vh',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        maxWidth: '200px',
+        maxHeight: '40vh',
         overflowY: 'auto',
         zIndex: 20,
-        fontSize: '13px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-        border: '1px solid #ddd'
+        fontSize: '11px',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
+        border: '1px solid #ccc'
     },
     mapInfoBottom: {
         position: 'absolute',
