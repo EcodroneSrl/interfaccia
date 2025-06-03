@@ -986,7 +986,7 @@ class DroneBoatInterface extends React.Component {
                                     />
                                 </div>
 
-                                {safeAppst === "MSS" && (
+                                {safeAppst === "MSS" && missionsTree && (
                                     <div style={styles.overlayPanel}>
                                         <Missions stateapp={safeAppst} userid={safeUserId} />
                                     </div>
@@ -1481,15 +1481,12 @@ class DroneBoatInterface extends React.Component {
                                     </table>
                                 ) : isLoadingWaypoints ? (
                                     <div style={styles.loadingContainer}>
-                                        <h4>⏳ Caricamento waypoints...</h4>
-                                        <p>Richiesta inviata al drone, attendere...</p>
+                                        <div>Caricamento waypoints...</div>
                                         <div style={styles.loadingSpinner}></div>
                                     </div>
                                 ) : (
-                                    <div style={styles.noDataContainer}>
-                                        <h4>📊 No data available</h4>
-                                        <p>I waypoints della missione non sono ancora stati caricati.</p>
-                                        <p>Per testare la visualizzazione, usa il pulsante <strong>"🧪 Test Waypoints"</strong> sopra.</p>
+                                    <div style={styles.simpleMessage}>
+                                        <p>Waypoints non caricati.</p>
                                     </div>
                                 )}
                             </div>
@@ -1858,28 +1855,28 @@ const styles = {
         verticalAlign: 'middle'
     },
     loadingContainer: {
-        padding: '40px',
+        padding: '20px',
         textAlign: 'center',
         backgroundColor: '#f8f9fa',
-        border: '2px dashed #3498db',
-        borderRadius: '8px',
+        border: '1px solid #3498db',
+        borderRadius: '6px',
         color: '#3498db'
     },
     loadingSpinner: {
-        width: '40px',
-        height: '40px',
-        border: '4px solid #f3f3f3',
-        borderTop: '4px solid #3498db',
+        width: '24px',
+        height: '24px',
+        border: '3px solid #f3f3f3',
+        borderTop: '3px solid #3498db',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
-        margin: '20px auto'
+        margin: '10px auto'
     },
-    noDataContainer: {
-        padding: '40px',
+    simpleMessage: {
+        padding: '15px',
         textAlign: 'center',
         backgroundColor: '#f8f9fa',
-        border: '2px dashed #dee2e6',
-        borderRadius: '8px',
-        color: '#666'
+        borderRadius: '6px',
+        color: '#666',
+        fontSize: '13px'
     }
 };
