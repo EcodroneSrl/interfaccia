@@ -1,133 +1,4 @@
-{/* SEZIONE DATI SENSORI PERSONALIZZATA */}
-                            <div style={styles.telemetrySection}>
-                                <div style={styles.sectionTitle}>Dati Sensori</div>
-                                {(() => {
-                                    try {
-                                        const sensorsData = this.getSensorsData();
-                                        return (
-                                            <>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>BoostX:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.boostX}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>EnergyC:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.energyC}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>EnergyP:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.energyP}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Fix:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.fix}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Gas:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.gas}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Heading:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.heading}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>HeadingD:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.headingD}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Hmare:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.hmare}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Lat:</span>
-                                                    <span style={{...styles.telemetryValue, color: sensorsData.lat !== "N/A" ? '#27ae60' : '#95a5a6'}}>
-                                                        {sensorsData.lat}
-                                                    </span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Lon:</span>
-                                                    <span style={{...styles.telemetryValue, color: sensorsData.lon !== "N/A" ? '#27ae60' : '#95a5a6'}}>
-                                                        {sensorsData.lon}
-                                                    </span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Pitch:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.pitch}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Roll:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.roll}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Ruota:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.ruota}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>TetaB:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.tetaB}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>TetaD:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.tetaD}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>Vel_GPS:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.velGPS}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>ViraY:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.viraY}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>boatNavMode:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.boatNavMode}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>idMissionNow:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.idMissionNow}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>millis:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.millis}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>mission_active:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.missionActive}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>nMissionNow:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.nMissionNow}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rifLatMission:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rifLatMission}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rifLatTrue:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rifLatTrue}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rifLonMission:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rifLonMission}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rifLonTrue:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rifLonTrue}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rpmCD:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rpmCD}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rpmCDc:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rpmCDc}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={styles.telemetryLabel}>rpmCS:</span>
-                                                    <span style={styles.telemetryValue}>{sensorsData.rpmCS}</span>
-                                                </div>
-                                                <div style={styles.telemetryItem}>
-                                                    <span style={import React, { Component } from 'react';
+import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'jquery/dist/jquery.min.js';
 import 'bootstrap/dist/js/bootstrap.min.js';
@@ -818,76 +689,56 @@ class DroneBoatInterface extends React.Component {
 
     // NUOVA FUNZIONE: Dati sensori con formattazione personalizzata
     getSensorsData = () => {
-        try {
-            const { telemetryData } = this.state;
+        const { telemetryData } = this.state;
+        
+        // Funzione helper per formattare i numeri
+        const formatValue = (value, decimals = 2) => {
+            if (value === null || value === undefined || value === "" || isNaN(value)) {
+                return value === "" ? "" : "N/A";
+            }
+            return parseFloat(value).toFixed(decimals);
+        };
+        
+        return {
+            // Coordinate con 6 decimali
+            lat: telemetryData.Lat !== undefined ? formatValue(telemetryData.Lat, 6) : "N/A",
+            lon: telemetryData.Lon !== undefined ? formatValue(telemetryData.Lon, 6) : "N/A",
             
-            // Funzione helper per formattare i numeri
-            const formatValue = (value, decimals = 2) => {
-                try {
-                    if (value === null || value === undefined || value === "" || isNaN(value)) {
-                        return value === "" ? "" : "N/A";
-                    }
-                    return parseFloat(value).toFixed(decimals);
-                } catch (error) {
-                    console.error('Error formatting value:', value, error);
-                    return "N/A";
-                }
-            };
-            
-            return {
-                // Coordinate con 6 decimali
-                lat: telemetryData.Lat !== undefined ? formatValue(telemetryData.Lat, 6) : "N/A",
-                lon: telemetryData.Lon !== undefined ? formatValue(telemetryData.Lon, 6) : "N/A",
-                
-                // Altri campi con 2 decimali o valori interi
-                boostX: telemetryData.BoostX !== undefined ? telemetryData.BoostX : "N/A",
-                energyC: telemetryData.EnergyC !== undefined ? formatValue(telemetryData.EnergyC, 2) : "N/A",
-                energyP: telemetryData.EnergyP !== undefined ? formatValue(telemetryData.EnergyP, 2) : "N/A",
-                fix: telemetryData.Fix !== undefined ? telemetryData.Fix : "N/A",
-                gas: telemetryData.Gas !== undefined ? telemetryData.Gas : "N/A",
-                heading: telemetryData.Heading !== undefined ? formatValue(telemetryData.Heading, 2) : "N/A",
-                headingD: telemetryData.HeadingD !== undefined ? formatValue(telemetryData.HeadingD, 2) : "N/A",
-                hmare: telemetryData.Hmare !== undefined ? formatValue(telemetryData.Hmare, 2) : "N/A",
-                pitch: telemetryData.Pitch !== undefined ? formatValue(telemetryData.Pitch, 2) : "N/A",
-                roll: telemetryData.Roll !== undefined ? formatValue(telemetryData.Roll, 2) : "N/A",
-                ruota: telemetryData.Ruota !== undefined ? telemetryData.Ruota : "N/A",
-                tetaB: telemetryData.TetaB !== undefined ? formatValue(telemetryData.TetaB, 2) : "N/A",
-                tetaD: telemetryData.TetaD !== undefined ? formatValue(telemetryData.TetaD, 2) : "N/A",
-                velGPS: telemetryData.Vel_GPS !== undefined ? formatValue(telemetryData.Vel_GPS, 2) : "N/A",
-                viraY: telemetryData.ViraY !== undefined ? telemetryData.ViraY : "N/A",
-                boatNavMode: telemetryData.boatNavMode !== undefined ? telemetryData.boatNavMode : "N/A",
-                idMissionNow: telemetryData.idMissionNow !== undefined ? telemetryData.idMissionNow : "",
-                millis: telemetryData.millis !== undefined ? telemetryData.millis : "N/A",
-                missionActive: telemetryData.mission_active !== undefined ? telemetryData.mission_active : "N/A",
-                nMissionNow: telemetryData.nMissionNow !== undefined ? telemetryData.nMissionNow : "N/A",
-                rifLatMission: telemetryData.rifLatMission !== undefined ? formatValue(telemetryData.rifLatMission, 2) : "N/A",
-                rifLatTrue: telemetryData.rifLatTrue !== undefined ? formatValue(telemetryData.rifLatTrue, 2) : "N/A",
-                rifLonMission: telemetryData.rifLonMission !== undefined ? formatValue(telemetryData.rifLonMission, 2) : "N/A",
-                rifLonTrue: telemetryData.rifLonTrue !== undefined ? formatValue(telemetryData.rifLonTrue, 2) : "N/A",
-                rpmCD: telemetryData.rpmCD !== undefined ? Math.round(telemetryData.rpmCD) : "N/A",
-                rpmCDc: telemetryData.rpmCDc !== undefined ? Math.round(telemetryData.rpmCDc) : "N/A",
-                rpmCS: telemetryData.rpmCS !== undefined ? Math.round(telemetryData.rpmCS) : "N/A",
-                rpmCSc: telemetryData.rpmCSc !== undefined ? Math.round(telemetryData.rpmCSc) : "N/A",
-                rpmDD: telemetryData.rpmDD !== undefined ? Math.round(telemetryData.rpmDD) : "N/A",
-                rpmDDc: telemetryData.rpmDDc !== undefined ? Math.round(telemetryData.rpmDDc) : "N/A",
-                rpmSS: telemetryData.rpmSS !== undefined ? Math.round(telemetryData.rpmSS) : "N/A",
-                rpmSSc: telemetryData.rpmSSc !== undefined ? Math.round(telemetryData.rpmSSc) : "N/A",
-                velD: telemetryData.vel_D !== undefined ? formatValue(telemetryData.vel_D, 2) : "N/A"
-            };
-        } catch (error) {
-            console.error('Error in getSensorsData:', error);
-            // Ritorna un oggetto con valori di default per evitare il crash
-            return {
-                lat: "N/A", lon: "N/A", boostX: "N/A", energyC: "N/A", energyP: "N/A",
-                fix: "N/A", gas: "N/A", heading: "N/A", headingD: "N/A", hmare: "N/A",
-                pitch: "N/A", roll: "N/A", ruota: "N/A", tetaB: "N/A", tetaD: "N/A",
-                velGPS: "N/A", viraY: "N/A", boatNavMode: "N/A", idMissionNow: "",
-                millis: "N/A", missionActive: "N/A", nMissionNow: "N/A",
-                rifLatMission: "N/A", rifLatTrue: "N/A", rifLonMission: "N/A", rifLonTrue: "N/A",
-                rpmCD: "N/A", rpmCDc: "N/A", rpmCS: "N/A", rpmCSc: "N/A",
-                rpmDD: "N/A", rpmDDc: "N/A", rpmSS: "N/A", rpmSSc: "N/A", velD: "N/A"
-            };
-        }
+            // Altri campi con 2 decimali o valori interi
+            boostX: telemetryData.BoostX !== undefined ? telemetryData.BoostX : "N/A",
+            energyC: telemetryData.EnergyC !== undefined ? formatValue(telemetryData.EnergyC, 2) : "N/A",
+            energyP: telemetryData.EnergyP !== undefined ? formatValue(telemetryData.EnergyP, 2) : "N/A",
+            fix: telemetryData.Fix !== undefined ? telemetryData.Fix : "N/A",
+            gas: telemetryData.Gas !== undefined ? telemetryData.Gas : "N/A",
+            heading: telemetryData.Heading !== undefined ? formatValue(telemetryData.Heading, 2) : "N/A",
+            headingD: telemetryData.HeadingD !== undefined ? formatValue(telemetryData.HeadingD, 2) : "N/A",
+            hmare: telemetryData.Hmare !== undefined ? formatValue(telemetryData.Hmare, 2) : "N/A",
+            pitch: telemetryData.Pitch !== undefined ? formatValue(telemetryData.Pitch, 2) : "N/A",
+            roll: telemetryData.Roll !== undefined ? formatValue(telemetryData.Roll, 2) : "N/A",
+            ruota: telemetryData.Ruota !== undefined ? telemetryData.Ruota : "N/A",
+            tetaB: telemetryData.TetaB !== undefined ? formatValue(telemetryData.TetaB, 2) : "N/A",
+            tetaD: telemetryData.TetaD !== undefined ? formatValue(telemetryData.TetaD, 2) : "N/A",
+            velGPS: telemetryData.Vel_GPS !== undefined ? formatValue(telemetryData.Vel_GPS, 2) : "N/A",
+            viraY: telemetryData.ViraY !== undefined ? telemetryData.ViraY : "N/A",
+            boatNavMode: telemetryData.boatNavMode !== undefined ? telemetryData.boatNavMode : "N/A",
+            idMissionNow: telemetryData.idMissionNow !== undefined ? telemetryData.idMissionNow : "",
+            millis: telemetryData.millis !== undefined ? telemetryData.millis : "N/A",
+            missionActive: telemetryData.mission_active !== undefined ? telemetryData.mission_active : "N/A",
+            nMissionNow: telemetryData.nMissionNow !== undefined ? telemetryData.nMissionNow : "N/A",
+            rifLatMission: telemetryData.rifLatMission !== undefined ? formatValue(telemetryData.rifLatMission, 2) : "N/A",
+            rifLatTrue: telemetryData.rifLatTrue !== undefined ? formatValue(telemetryData.rifLatTrue, 2) : "N/A",
+            rifLonMission: telemetryData.rifLonMission !== undefined ? formatValue(telemetryData.rifLonMission, 2) : "N/A",
+            rifLonTrue: telemetryData.rifLonTrue !== undefined ? formatValue(telemetryData.rifLonTrue, 2) : "N/A",
+            rpmCD: telemetryData.rpmCD !== undefined ? Math.round(telemetryData.rpmCD) : "N/A",
+            rpmCDc: telemetryData.rpmCDc !== undefined ? Math.round(telemetryData.rpmCDc) : "N/A",
+            rpmCS: telemetryData.rpmCS !== undefined ? Math.round(telemetryData.rpmCS) : "N/A",
+            rpmCSc: telemetryData.rpmCSc !== undefined ? Math.round(telemetryData.rpmCSc) : "N/A",
+            rpmDD: telemetryData.rpmDD !== undefined ? Math.round(telemetryData.rpmDD) : "N/A",
+            rpmDDc: telemetryData.rpmDDc !== undefined ? Math.round(telemetryData.rpmDDc) : "N/A",
+            rpmSS: telemetryData.rpmSS !== undefined ? Math.round(telemetryData.rpmSS) : "N/A",
+            rpmSSc: telemetryData.rpmSSc !== undefined ? Math.round(telemetryData.rpmSSc) : "N/A",
+            velD: telemetryData.vel_D !== undefined ? formatValue(telemetryData.vel_D, 2) : "N/A"
+        };
     };
 
     // Funzione helper per ottenere il nome della missione in modo sicuro
@@ -1904,15 +1755,12 @@ const styles = {
         top: '10px',
         left: '10px',
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: '8px 12px',
+        padding: '15px',
         borderRadius: '5px',
-        maxWidth: '280px',
-        maxHeight: '60vh',
+        maxWidth: '400px',
+        maxHeight: '80%',
         overflowY: 'auto',
-        zIndex: 20,
-        fontSize: '13px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-        border: '1px solid #ddd'
+        zIndex: 20
     },
     mapInfoBottom: {
         position: 'absolute',
