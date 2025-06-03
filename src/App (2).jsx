@@ -5,7 +5,7 @@ import 'bootstrap/dist/js/bootstrap.min.js';
 import { WebSocketMonitoring } from './components/WebSocketMonitoring';
 import { UserIdMonitoring } from './components/UserIdMonitoring';
 import { WebSocketProvider, WebSocketContext } from './components/Websockets';
-// Rimosso import BoatSensorsData - ora implementazione personalizzata
+import { BoatSensorsData } from './components/BoatSensorsData';
 import { Missions } from './components/Missions/Missions';
 import { EcoMap } from './components/MultiComponents/EcoMap';
 import { ChangeAppState } from './components/StateMonitoring';
@@ -687,39 +687,6 @@ class DroneBoatInterface extends React.Component {
         };
     };
 
-    // NUOVA FUNZIONE: Dati sensori con formattazione personalizzata
-    getSensorsData = () => {
-        const { telemetryData } = this.state;
-        
-        // Funzione helper per formattare i numeri
-        const formatValue = (value, decimals = 2, unit = '') => {
-            if (value === null || value === undefined || isNaN(value)) {
-                return "N/A";
-            }
-            return parseFloat(value).toFixed(decimals) + (unit ? ` ${unit}` : '');
-        };
-        
-        return {
-            // Coordinate con 6 decimali
-            latitude: telemetryData.Lat ? formatValue(telemetryData.Lat, 6, '° N') : "N/A",
-            longitude: telemetryData.Lon ? formatValue(telemetryData.Lon, 6, '° E') : "N/A",
-            
-            // Altri sensori con 2 decimali
-            altitude: telemetryData.Hmare ? formatValue(telemetryData.Hmare, 2, 'm') : "N/A",
-            temperature: telemetryData.Temperature ? formatValue(telemetryData.Temperature, 2, '°C') : "N/A",
-            humidity: telemetryData.Humidity ? formatValue(telemetryData.Humidity, 2, '%') : "N/A",
-            pressure: telemetryData.Pressure ? formatValue(telemetryData.Pressure, 2, 'hPa') : "N/A",
-            windSpeed: telemetryData.WindSpeed ? formatValue(telemetryData.WindSpeed, 2, 'm/s') : "N/A",
-            windDirection: telemetryData.WindDirection ? formatValue(telemetryData.WindDirection, 2, '°') : "N/A",
-            waterTemp: telemetryData.WaterTemp ? formatValue(telemetryData.WaterTemp, 2, '°C') : "N/A",
-            depth: telemetryData.Depth ? formatValue(telemetryData.Depth, 2, 'm') : "N/A",
-            salinity: telemetryData.Salinity ? formatValue(telemetryData.Salinity, 2, 'PSU') : "N/A",
-            pH: telemetryData.pH ? formatValue(telemetryData.pH, 2) : "N/A",
-            dissolvedOxygen: telemetryData.DissolvedOxygen ? formatValue(telemetryData.DissolvedOxygen, 2, 'mg/L') : "N/A",
-            turbidity: telemetryData.Turbidity ? formatValue(telemetryData.Turbidity, 2, 'NTU') : "N/A"
-        };
-    };
-
     // Funzione helper per ottenere il nome della missione in modo sicuro
     getMissionName = (missionPath) => {
         if (!missionPath || typeof missionPath !== 'string' || missionPath.trim() === '') {
@@ -794,7 +761,6 @@ class DroneBoatInterface extends React.Component {
             const navigationData = this.getNavigationData();
             const motorsData = this.getMotorsData();
             const joystickData = this.getJoystickData();
-            const sensorsData = this.getSensorsData(); // NUOVA: dati sensori personalizzati
 
             const displayUserId = safeStateUserId !== "NNN" ? safeStateUserId : safeUserId;
 
@@ -994,69 +960,9 @@ class DroneBoatInterface extends React.Component {
                         <div style={styles.rightSidebar}>
                             <div style={styles.sectionTitle}>Telemetria</div>
 
-                            {/* SEZIONE DATI SENSORI PERSONALIZZATA */}
                             <div style={styles.telemetrySection}>
                                 <div style={styles.sectionTitle}>Dati Sensori</div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Lat:</span>
-                                    <span style={{...styles.telemetryValue, color: sensorsData.latitude !== "N/A" ? '#27ae60' : '#95a5a6'}}>
-                                        {sensorsData.latitude}
-                                    </span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Lon:</span>
-                                    <span style={{...styles.telemetryValue, color: sensorsData.longitude !== "N/A" ? '#27ae60' : '#95a5a6'}}>
-                                        {sensorsData.longitude}
-                                    </span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Altitudine:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.altitude}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Temperatura:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.temperature}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Umidità:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.humidity}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Pressione:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.pressure}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Vel. Vento:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.windSpeed}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Dir. Vento:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.windDirection}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Temp. Acqua:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.waterTemp}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Profondità:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.depth}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Salinità:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.salinity}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>pH:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.pH}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>O₂ Disciolto:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.dissolvedOxygen}</span>
-                                </div>
-                                <div style={styles.telemetryItem}>
-                                    <span style={styles.telemetryLabel}>Torbidità:</span>
-                                    <span style={styles.telemetryValue}>{sensorsData.turbidity}</span>
-                                </div>
+                                <BoatSensorsData />
                             </div>
 
                             <div style={styles.telemetrySection}>
