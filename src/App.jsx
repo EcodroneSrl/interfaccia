@@ -988,21 +988,31 @@ class DroneBoatInterface extends React.Component {
 
                         {/* Main Content */}
                         <div style={styles.mainContent}>
-                            {/* Camera View */}
+                            {/* Camera View MODIFICATA */}
                             <div style={styles.cameraView}>
-                                <h2>Camera Principale</h2>
-                                <div style={styles.cameraOptions}>
-                                    <div style={styles.cameraOption}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
-                                    </div>
-                                    <div style={styles.cameraOption}>
+                                <h2 style={styles.cameraTitle}>Camera Principale</h2>
+                                
+                                {/* Video principale di sfondo */}
+                                <div style={styles.mainCameraBackground}>
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                </div>
+                                
+                                {/* Overlay con le 3 telecamere secondarie */}
+                                <div style={styles.cameraOverlay}>
+                                    <div style={styles.overlayCamera}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
                                     </div>
-                                    <div style={styles.cameraOption}>
+                                    <div style={styles.overlayCamera}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
                                     </div>
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                    </div>
                                 </div>
-                                <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
+                                
+                                <button style={{ ...styles.blueBtn, marginTop: '20px', position: 'relative', zIndex: 10 }}>
+                                    Cambia Vista
+                                </button>
                             </div>
 
                             {/* NUOVO: Header informazioni missione */}
@@ -1587,7 +1597,7 @@ class DroneBoatInterface extends React.Component {
     }
 }
 
-// Styles object
+// Styles object AGGIORNATO con i nuovi stili per la camera
 const styles = {
     body: {
         margin: 0,
@@ -1743,17 +1753,59 @@ const styles = {
         display: 'inline-block',
         margin: '5px'
     },
+    // *** NUOVI STILI CAMERA ***
     cameraView: {
         flex: 2,
-        backgroundColor: '#333',
+        backgroundColor: '#000', // Nero per miglior contrasto
         marginBottom: '10px',
         color: 'white',
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative'
+        overflow: 'hidden',
+        minHeight: '400px'
     },
+    cameraTitle: {
+        position: 'absolute',
+        top: '10px',
+        left: '20px',
+        zIndex: 15,
+        margin: 0,
+        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        padding: '8px 15px',
+        borderRadius: '5px',
+        fontSize: '18px',
+        fontWeight: 'bold'
+    },
+    mainCameraBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 1
+    },
+    cameraOverlay: {
+        position: 'absolute',
+        bottom: '20px',
+        right: '20px',
+        display: 'flex',
+        gap: '10px',
+        zIndex: 10
+    },
+    overlayCamera: {
+        width: '120px',
+        height: '80px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+        border: '2px solid rgba(255,255,255,0.3)',
+        backgroundColor: 'transparent',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        cursor: 'pointer'
+    },
+    // *** FINE NUOVI STILI CAMERA ***
     mapView: {
         flex: 1,
         backgroundColor: '#1a3a5a',
@@ -1809,19 +1861,6 @@ const styles = {
         marginTop: '10px',
         position: 'relative'
     },
-    cameraOptions: {
-        display: 'flex',
-        width: '100%',
-        justifyContent: 'space-between',
-        marginTop: '10px'
-    },
-    cameraOption: {
-        backgroundColor: '#555',
-        padding: '20px',
-        textAlign: 'center',
-        flex: 1,
-        margin: '0 5px'
-    },
     overlayPanel: {
         position: 'absolute',
         top: '10px',
@@ -1869,6 +1908,67 @@ const styles = {
         border: '1px solid #e0e0e0',
         borderRadius: '5px',
         backgroundColor: '#fafafa'
+    },
+
+    // STILI PER IL HEADER MISSIONE
+    missionStatusHeader: {
+        backgroundColor: '#1a3a5a',
+        color: 'white',
+        padding: '10px 20px',
+        marginBottom: '10px',
+        borderRadius: '5px'
+    },
+    missionStatusContainer: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    missionStatusLeft: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '15px'
+    },
+    missionActiveIndicator: {
+        padding: '8px 15px',
+        borderRadius: '20px',
+        fontWeight: 'bold',
+        fontSize: '14px'
+    },
+    missionDetails: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px'
+    },
+    missionName: {
+        fontSize: '16px',
+        fontWeight: 'bold'
+    },
+    missionNumber: {
+        fontSize: '14px',
+        color: '#cccccc'
+    },
+    missionStatusRight: {
+        display: 'flex',
+        alignItems: 'center'
+    },
+    targetCoordinates: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px'
+    },
+    coordinateItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: '10px'
+    },
+    coordinateLabel: {
+        fontSize: '12px',
+        color: '#cccccc'
+    },
+    coordinateValue: {
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: 'white'
     },
 
     // NUOVI STILI PER IL PANNELLO MISSIONE
