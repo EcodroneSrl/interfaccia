@@ -677,14 +677,14 @@ class DroneBoatInterface extends React.Component {
         return motors;
     };
 
-    getJoystickData = () => {
+    // Funzione helper per calcolare il tempo di accensione in minuti
+    getVehicleUptime = () => {
         const { telemetryData } = this.state;
-        return {
-            boostX: telemetryData.BoostX || "N/A",
-            viraY: telemetryData.ViraY || "N/A",
-            gas: telemetryData.Gas || "N/A",
-            ruota: telemetryData.Ruota || "N/A"
-        };
+        if (telemetryData.millis && telemetryData.millis !== "N/A") {
+            const minutes = Math.floor(telemetryData.millis / 1000 / 60);
+            return minutes;
+        }
+        return 0;
     };
 
     // NUOVA FUNZIONE: Dati sensori con formattazione personalizzata
@@ -986,9 +986,14 @@ class DroneBoatInterface extends React.Component {
                                     />
                                 </div>
 
-                                {safeAppst === "MSS" && missionsTree && (
+                                {safeAppst === "MSS" && (
                                     <div style={styles.overlayPanel}>
-                                        <Missions stateapp={safeAppst} userid={safeUserId} />
+                                        <div style={{
+                                            ...styles.hideNoDataText,
+                                            opacity: (missionsTree && missionsTree.Children && missionsTree.Children.length > 0) ? 1 : 0
+                                        }}>
+                                            <Missions stateapp={safeAppst} userid={safeUserId} />
+                                        </div>
                                     </div>
                                 )}
                                 {safeAppst === "WPY" && (
@@ -1761,6 +1766,9 @@ const styles = {
         fontSize: '11px',
         boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
         border: '1px solid #ccc'
+    },
+    hideNoDataText: {
+        transition: 'opacity 0.3s ease'
     },
     mapInfoBottom: {
         position: 'absolute',
