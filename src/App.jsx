@@ -1916,7 +1916,7 @@ const styles = {
     overlayCamera: {
         width: '220px',
         height: '150px',
-        borderRadius: '8px',
+        borderRadius: '1px',
         overflow: 'hidden',
         boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
         border: '2px solid rgba(255,255,255,0.3)',
