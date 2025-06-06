@@ -677,14 +677,14 @@ class DroneBoatInterface extends React.Component {
         return motors;
     };
 
-    // Funzione helper per calcolare il tempo di accensione in minuti
-    getVehicleUptime = () => {
+    getJoystickData = () => {
         const { telemetryData } = this.state;
-        if (telemetryData.millis && telemetryData.millis !== "N/A") {
-            const minutes = Math.floor(telemetryData.millis / 1000 / 60);
-            return minutes;
-        }
-        return 0;
+        return {
+            boostX: telemetryData.BoostX || "N/A",
+            viraY: telemetryData.ViraY || "N/A",
+            gas: telemetryData.Gas || "N/A",
+            ruota: telemetryData.Ruota || "N/A"
+        };
     };
 
     // NUOVA FUNZIONE: Dati sensori con formattazione personalizzata
