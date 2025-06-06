@@ -709,6 +709,78 @@ class DroneBoatInterface extends React.Component {
         }
     };
 
+    // NUOVA FUNZIONE: Calcolo dinamico batteria LiFePo4
+    getBatteryData = () => {
+        const { telemetryData } = this.state;
+        
+        // Costanti batteria LiFePo4 (8 celle in serie)
+        const CELLS_COUNT = 8;
+        const CELL_VOLTAGE_MAX = 3550; // mV per cella carica
+        const CELL_VOLTAGE_MIN = 3000; // mV per cella scarica
+        const TOTAL_VOLTAGE_MAX = CELL_VOLTAGE_MAX * CELLS_COUNT; // 28400mV
+        const TOTAL_VOLTAGE_MIN = CELL_VOLTAGE_MIN * CELLS_COUNT; // 24000mV
+        
+        try {
+            // Leggi tensione da rifLatTrue (in mV)
+            const batteryVoltageMv = telemetryData.rifLatTrue ? parseFloat(telemetryData.rifLatTrue) : null;
+            
+            if (!batteryVoltageMv || isNaN(batteryVoltageMv) || batteryVoltageMv <= 0) {
+                return {
+                    percentage: 0,
+                    cellVoltage: "N/A",
+                    totalVoltage: "N/A",
+                    status: "error",
+                    color: "#95a5a6"
+                };
+            }
+            
+            // Calcola percentuale batteria
+            let percentage = ((batteryVoltageMv - TOTAL_VOLTAGE_MIN) / (TOTAL_VOLTAGE_MAX - TOTAL_VOLTAGE_MIN)) * 100;
+            percentage = Math.max(0, Math.min(100, percentage)); // Clamp tra 0-100
+            
+            // Calcola tensione media per cella in Volt
+            const cellVoltageV = (batteryVoltageMv / CELLS_COUNT / 1000).toFixed(3);
+            const totalVoltageV = (batteryVoltageMv / 1000).toFixed(2);
+            
+            // Determina colore e stato in base alla percentuale
+            let color, status;
+            if (percentage >= 80) {
+                color = "#27ae60"; // Verde
+                status = "excellent";
+            } else if (percentage >= 60) {
+                color = "#2ecc71"; // Verde chiaro
+                status = "good";
+            } else if (percentage >= 40) {
+                color = "#f39c12"; // Arancione
+                status = "medium";
+            } else if (percentage >= 20) {
+                color = "#e67e22"; // Arancione scuro
+                status = "low";
+            } else {
+                color = "#e74c3c"; // Rosso
+                status = "critical";
+            }
+            
+            return {
+                percentage: Math.round(percentage),
+                cellVoltage: cellVoltageV,
+                totalVoltage: totalVoltageV,
+                status: status,
+                color: color
+            };
+            
+        } catch (error) {
+            console.error('Errore calcolo batteria:', error);
+            return {
+                percentage: 0,
+                cellVoltage: "ERR",
+                totalVoltage: "ERR",
+                status: "error",
+                color: "#95a5a6"
+            };
+        }
+    };
+
     // NUOVA FUNZIONE: Dati sensori con formattazione personalizzata
     getSensorsData = () => {
         const { telemetryData } = this.state;
@@ -838,6 +910,7 @@ class DroneBoatInterface extends React.Component {
             const motorsData = this.getMotorsData();
             const joystickData = this.getJoystickData();
             const sensorsData = this.getSensorsData(); // NUOVA: dati sensori personalizzati
+            const batteryData = this.getBatteryData(); // NUOVA: dati batteria dinamici
 
             const displayUserId = safeStateUserId !== "NNN" ? safeStateUserId : safeUserId;
 
@@ -859,7 +932,27 @@ class DroneBoatInterface extends React.Component {
                             <div>CONSUMO: {energyData.consumption}</div>
                             <div style={styles.powerBar}></div>
                         </div>
-                        <div style={styles.batteryPercent}>85%</div>
+                        <div style={styles.batteryContainer}>
+                            <div style={{...styles.batteryIcon, backgroundColor: batteryData.color}}>
+                                🔋
+                            </div>
+                            <div style={styles.batteryInfo}>
+                                <div style={{...styles.batteryPercent, color: batteryData.color}}>
+                                    {batteryData.percentage}%
+                                </div>
+                                <div style={styles.batteryCellVoltage}>
+                                    {batteryData.cellVoltage}V/cell
+                                </div>
+                            </div>
+                            <div style={styles.batteryDetails}>
+                                <div style={styles.batteryTotal}>
+                                    Tot: {batteryData.totalVoltage}V
+                                </div>
+                                <div style={{...styles.batteryStatus, color: batteryData.color}}>
+                                    {batteryData.status.toUpperCase()}
+                                </div>
+                            </div>
+                        </div>
                         <div style={styles.uptimeIndicator}>
                             Ton[h]: {(() => {
                                 const millis = sensorsData.millis;
@@ -1644,11 +1737,52 @@ const styles = {
         backgroundColor: '#2ecc71',
         borderRadius: '5px'
     },
+    batteryContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        padding: '8px 12px',
+        borderRadius: '8px',
+        border: '1px solid rgba(255,255,255,0.2)'
+    },
+    batteryIcon: {
+        fontSize: '20px',
+        padding: '4px',
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    batteryInfo: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+    },
     batteryPercent: {
-        backgroundColor: '#3498db',
-        color: 'white',
-        padding: '5px 10px',
-        borderRadius: '5px'
+        fontSize: '16px',
+        fontWeight: 'bold',
+        lineHeight: '1'
+    },
+    batteryCellVoltage: {
+        fontSize: '10px',
+        color: '#cccccc',
+        lineHeight: '1'
+    },
+    batteryDetails: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start'
+    },
+    batteryTotal: {
+        fontSize: '11px',
+        color: '#cccccc',
+        lineHeight: '1'
+    },
+    batteryStatus: {
+        fontSize: '9px',
+        fontWeight: 'bold',
+        lineHeight: '1'
     },
     uptimeIndicator: {
         backgroundColor: '#27ae60',
@@ -2039,4 +2173,4 @@ const styles = {
         color: '#666',
         fontSize: '13px'
     }
-};                 
+};
