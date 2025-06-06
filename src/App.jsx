@@ -1914,8 +1914,8 @@ const styles = {
         zIndex: 10
     },
     overlayCamera: {
-        width: '180px',
-        height: '120px',
+        width: '220px',
+        height: '150px',
         borderRadius: '8px',
         overflow: 'hidden',
         boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
