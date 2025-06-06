@@ -990,17 +990,15 @@ class DroneBoatInterface extends React.Component {
                         <div style={styles.mainContent}>
                             {/* Camera View MODIFICATA */}
                             <div style={styles.cameraView}>
-                                <h2 style={styles.cameraTitle}>Camera Principale</h2>
-                                
-                                {/* Video principale di sfondo */}
+                                {/* Video principale di sfondo - ora quello frontale */}
                                 <div style={styles.mainCameraBackground}>
-                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
                                 </div>
                                 
-                                {/* Overlay con le 3 telecamere secondarie */}
+                                {/* Overlay con le 3 telecamere secondarie - centrate e più grandi */}
                                 <div style={styles.cameraOverlay}>
                                     <div style={styles.overlayCamera}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
                                     </div>
                                     <div style={styles.overlayCamera}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
@@ -1009,10 +1007,6 @@ class DroneBoatInterface extends React.Component {
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
                                     </div>
                                 </div>
-                                
-                                <button style={{ ...styles.blueBtn, marginTop: '20px', position: 'relative', zIndex: 10 }}>
-                                    Cambia Vista
-                                </button>
                             </div>
 
                             {/* NUOVO: Header informazioni missione */}
@@ -1765,19 +1759,6 @@ const styles = {
         overflow: 'hidden',
         minHeight: '400px'
     },
-    cameraTitle: {
-        position: 'absolute',
-        top: '10px',
-        left: '20px',
-        zIndex: 15,
-        margin: 0,
-        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        padding: '8px 15px',
-        borderRadius: '5px',
-        fontSize: '18px',
-        fontWeight: 'bold'
-    },
     mainCameraBackground: {
         position: 'absolute',
         top: 0,
@@ -1789,14 +1770,15 @@ const styles = {
     cameraOverlay: {
         position: 'absolute',
         bottom: '20px',
-        right: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
         display: 'flex',
-        gap: '10px',
+        gap: '15px',
         zIndex: 10
     },
     overlayCamera: {
-        width: '120px',
-        height: '80px',
+        width: '180px',
+        height: '120px',
         borderRadius: '8px',
         overflow: 'hidden',
         boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
@@ -2057,4 +2039,4 @@ const styles = {
         color: '#666',
         fontSize: '13px'
     }
-};
+};                 
