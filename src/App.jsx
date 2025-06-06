@@ -1083,21 +1083,24 @@ class DroneBoatInterface extends React.Component {
                         <div style={styles.mainContent}>
                             {/* Camera View MODIFICATA */}
                             <div style={styles.cameraView}>
-                                {/* Video principale di sfondo - ora quello frontale */}
+                                {/* Video principale di sfondo - telecamera che manda delle 4 */}
                                 <div style={styles.mainCameraBackground}>
-                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
                                 </div>
                                 
                                 {/* Overlay con le 3 telecamere secondarie - centrate e più grandi */}
                                 <div style={styles.cameraOverlay}>
-                                    <div style={styles.overlayCamera}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
-                                    </div>
+                                    {/* Sinistra: quella che era centrale (stream2) */}
                                     <div style={styles.overlayCamera}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
                                     </div>
+                                    {/* Centro: telecamera posteriore */}
                                     <div style={styles.overlayCamera}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                    </div>
+                                    {/* Destra: quella che era grande (stream1 - frontale) */}
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
                                     </div>
                                 </div>
                             </div>
