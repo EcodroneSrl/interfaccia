@@ -861,15 +861,13 @@ class DroneBoatInterface extends React.Component {
                         </div>
                         <div style={styles.batteryPercent}>85%</div>
                         <div style={styles.uptimeIndicator}>
-                            Ton[min]: {(() => {
+                            Ton[h]: {(() => {
                                 const millis = sensorsData.millis;
-                                console.log('Header - millis value:', millis);
                                 if (millis && millis !== "N/A" && !isNaN(parseInt(millis))) {
-                                    const minutes = Math.floor(parseInt(millis) / 1000 / 60);
-                                    console.log('Header - calculated minutes:', minutes);
-                                    return minutes;
+                                    const hours = parseInt(millis) / 1000 / 60 / 60;
+                                    return hours.toFixed(2);
                                 }
-                                return 0;
+                                return "0.00";
                             })()}
                         </div>
                     </div>
@@ -1005,6 +1003,44 @@ class DroneBoatInterface extends React.Component {
                                     </div>
                                 </div>
                                 <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
+                            </div>
+
+                            {/* NUOVO: Header informazioni missione */}
+                            <div style={styles.missionStatusHeader}>
+                                <div style={styles.missionStatusContainer}>
+                                    <div style={styles.missionStatusLeft}>
+                                        <div style={{
+                                            ...styles.missionActiveIndicator,
+                                            backgroundColor: sensorsData.missionActive === 1 ? '#27ae60' : '#95a5a6'
+                                        }}>
+                                            {sensorsData.missionActive === 1 ? '🟢 MISSIONE ATTIVA' : '⚪ MISSIONE INATTIVA'}
+                                        </div>
+                                        <div style={styles.missionDetails}>
+                                            <span style={styles.missionName}>
+                                                📋 {sensorsData.idMissionNow && sensorsData.idMissionNow !== "" ? sensorsData.idMissionNow : "Nessuna missione"}
+                                            </span>
+                                            <span style={styles.missionNumber}>
+                                                #{sensorsData.nMissionNow !== "N/A" ? sensorsData.nMissionNow : "0"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div style={styles.missionStatusRight}>
+                                        <div style={styles.targetCoordinates}>
+                                            <div style={styles.coordinateItem}>
+                                                <span style={styles.coordinateLabel}>Target Lat:</span>
+                                                <span style={styles.coordinateValue}>
+                                                    {sensorsData.rifLatMission !== "N/A" ? parseFloat(sensorsData.rifLatMission).toFixed(6) + "°" : "N/A"}
+                                                </span>
+                                            </div>
+                                            <div style={styles.coordinateItem}>
+                                                <span style={styles.coordinateLabel}>Target Lon:</span>
+                                                <span style={styles.coordinateValue}>
+                                                    {sensorsData.rifLonMission !== "N/A" ? parseFloat(sensorsData.rifLonMission).toFixed(6) + "°" : "N/A"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Map View */}
