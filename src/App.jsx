@@ -687,6 +687,28 @@ class DroneBoatInterface extends React.Component {
         };
     };
 
+    // Funzione helper per calcolare il tempo di accensione in minuti
+    getVehicleUptime = () => {
+        try {
+            const { telemetryData } = this.state;
+            console.log('Debug - telemetryData.millis:', telemetryData.millis);
+            
+            if (telemetryData && telemetryData.millis !== undefined && telemetryData.millis !== "N/A" && telemetryData.millis !== null) {
+                const millisValue = parseInt(telemetryData.millis);
+                if (!isNaN(millisValue) && millisValue > 0) {
+                    const minutes = Math.floor(millisValue / 1000 / 60);
+                    console.log('Debug - calculated minutes:', minutes);
+                    return minutes;
+                }
+            }
+            console.log('Debug - returning 0, millis not valid');
+            return 0;
+        } catch (error) {
+            console.error('Error in getVehicleUptime:', error);
+            return 0;
+        }
+    };
+
     // NUOVA FUNZIONE: Dati sensori con formattazione personalizzata
     getSensorsData = () => {
         const { telemetryData } = this.state;
@@ -838,7 +860,18 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.powerBar}></div>
                         </div>
                         <div style={styles.batteryPercent}>85%</div>
-                        <div style={styles.closeBtn}>X</div>
+                        <div style={styles.uptimeIndicator}>
+                            Ton[min]: {(() => {
+                                const millis = sensorsData.millis;
+                                console.log('Header - millis value:', millis);
+                                if (millis && millis !== "N/A" && !isNaN(parseInt(millis))) {
+                                    const minutes = Math.floor(parseInt(millis) / 1000 / 60);
+                                    console.log('Header - calculated minutes:', minutes);
+                                    return minutes;
+                                }
+                                return 0;
+                            })()}
+                        </div>
                     </div>
 
                     {/* Container */}
@@ -1577,12 +1610,13 @@ const styles = {
         padding: '5px 10px',
         borderRadius: '5px'
     },
-    closeBtn: {
-        backgroundColor: '#e74c3c',
+    uptimeIndicator: {
+        backgroundColor: '#27ae60',
         color: 'white',
         padding: '5px 10px',
         borderRadius: '5px',
-        cursor: 'pointer'
+        fontSize: '14px',
+        fontWeight: 'bold'
     },
     container: {
         display: 'flex',
