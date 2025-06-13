@@ -35,11 +35,11 @@ export default class App extends React.Component {
     };
 
     toggleEditorMode = () => {
-        console.log('Toggle Editor Mode chiamato');
-        console.log('Stato attuale:', this.state.editorMode);
+        console.log('Click sul pulsante Apri Editor');
         this.setState(prevState => {
             const newState = {
-                editorMode: !prevState.editorMode
+                editorMode: !prevState.editorMode,
+                appst: !prevState.editorMode ? 'WPY' : 'STD' // Cambia lo stato dell'app quando si attiva/disattiva l'editor
             };
             console.log('Nuovo stato:', newState);
             return newState;

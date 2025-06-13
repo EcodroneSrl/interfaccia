@@ -484,6 +484,12 @@ const MapboxMap = ({
                 // Aggiungi il nuovo listener solo se siamo in modalità waypoint
                 if (stateapp === 'WPY') {
                     map.current.on('click', handleMapClick);
+                    // Forza il ridimensionamento della mappa quando si attiva la modalità waypoint
+                    setTimeout(() => {
+                        if (map.current) {
+                            map.current.resize();
+                        }
+                    }, 100);
                 }
             } catch (error) {
                 console.error('Errore nella gestione degli eventi:', error);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col, Container } from 'react-bootstrap';
 import { WebSocketContext } from '../Websockets';
+import MapboxMap from './MapboxMap';
 
 const MapContext = React.createContext();
 const MapContextConsumer = MapContext.Consumer;
@@ -28,6 +29,11 @@ export const EcoMap = ({ children, appst, uuid }) => {
         IdMissionNext: 'NNN',
         StandRadius: 0,
     });
+
+    const [stateapp, setStateApp] = useState(appst);
+    const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/streets-v11');
+    const [missionWaypoints, setMissionWaypoints] = useState([]);
+    const [selectedMission, setSelectedMission] = useState(null);
 
     const createNewFeature = (
         coordinates = [],
@@ -290,15 +296,53 @@ export const EcoMap = ({ children, appst, uuid }) => {
     }, [mapmarkers]);
 
     return (
-        <MapContext.Provider value={{ handleAddMarker, mapmarkers, clearMap: ResetMarkers }}>
-            <div style={{ 
-                width: '100%', 
-                height: '100%', 
-                position: 'relative',
+        <MapContext.Provider value={{
+            mapmarkers,
+            handleAddMarker,
+            handleRemoveMarker,
+            handlePositionChangeMarker,
+            handleSubmitFormPoints,
+            handleChangeInHeader,
+            handleSubmitHeaderMission,
+            headerData,
+            stateapp
+        }}>
+            <div style={{
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                height: '100vh',
+                width: '100vw',
+                overflow: 'hidden'
             }}>
-                {children}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flex: 1,
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        flex: stateapp === 'WPY' ? 1 : 0.7,
+                        transition: 'flex 0.3s ease-in-out',
+                        overflow: 'hidden'
+                    }}>
+                        <MapboxMap
+                            stateapp={stateapp}
+                            mapStyle={mapStyle}
+                            missionWaypoints={missionWaypoints}
+                            selectedMission={selectedMission}
+                        />
+                    </div>
+                    {stateapp !== 'WPY' && (
+                        <div style={{
+                            flex: 0.3,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            overflow: 'hidden'
+                        }}>
+                            {children}
+                        </div>
+                    )}
+                </div>
             </div>
         </MapContext.Provider>
     );
