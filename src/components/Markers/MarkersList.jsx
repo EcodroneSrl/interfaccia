@@ -60,7 +60,7 @@ const MarkerList = ({ editorMode, autoSubmit }) => {
         return null;
     } else {
         return (
-            <div style={{ width: '100%', marginTop: '20px' }}>
+            <div style={{ width: '100%', marginTop: 0, padding: 0 }}>
                 <h2>Waypoints</h2>
                 <Form id="form-map-points" onSubmit={handleSubmit}>
                     <Table striped bordered hover responsive>
