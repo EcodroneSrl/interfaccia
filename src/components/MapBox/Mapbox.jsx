@@ -438,11 +438,10 @@ const MapboxMap = ({
 
 
     useEffect(() => {
-
         if (!map.current) {
             map.current = new mapboxgl.Map({
                 container: mapContainer.current,
-                style: mapStyleUrl, // Usa il nuovo stile
+                style: mapStyleUrl,
                 center: [lng, lat],
                 zoom: 9,
             });
@@ -452,10 +451,16 @@ const MapboxMap = ({
                 .addTo(map.current);
 
             map.current.on('move', funcOnMove);
+
+            // Forza il ridimensionamento della mappa dopo l'inizializzazione
+            setTimeout(() => {
+                if (map.current) {
+                    map.current.resize();
+                }
+            }, 100);
         }
 
         if (stateapp === 'WPY') {
-
             map.current.on('click', funcOnClick);
         } else {
             map.current.off('click', funcOnClick);
@@ -464,7 +469,6 @@ const MapboxMap = ({
         return () => {
             map.current.off('click', funcOnClick);
         };
-
     }, [stateapp, handleAddMarker, funcOnClick, mapStyleUrl, clearMap, autoCenter]);
 
     // Cleanup quando il componente viene smontato
