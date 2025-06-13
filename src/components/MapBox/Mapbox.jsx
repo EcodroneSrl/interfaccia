@@ -400,47 +400,16 @@ const MapboxMap = ({
         setAutoCenter(!autoCenter);
     };
 
-    const funcOnClick = useCallback((e) => {
-
-        if (stateapp === 'WPY') {
-
-            if (e.originalEvent.target.closest('.mapboxgl-marker')) {
-                return;
+    const handleMapClick = useCallback((e) => {
+        try {
+            if (stateapp === 'WPY' && handleAddMarker && map.current) {
+                const { lng, lat } = e.lngLat;
+                handleAddMarker({ lng, lat });
             }
-
-            const features = map.current.queryRenderedFeatures(e.point);
-
-            // Per la vista satellitare, rimuoviamo il controllo sui waterFeatures
-            // poiché i layer potrebbero avere nomi diversi
-            // const waterFeatures = features.filter(feature => feature.layer.id === 'water');
-            // if (waterFeatures.length == 0) {
-            //     return;
-            // }
-
-            const { lngLat } = e;
-
-            if (features.length > 0) {
-                const clickedFeature = features[0];
-                const featureType = clickedFeature.layer.type;
-
-                if (featureType === 'line') {
-                    const lineProperties = clickedFeature.properties;
-
-                    if (lineProperties.id !== 'circleline') {
-                        handleAddMarker(lngLat, true, lineProperties.id);
-                    }
-                } else {
-                    handleAddMarker(lngLat);
-                }
-            } else {
-                // Permetti di aggiungere marker anche se non ci sono features
-                handleAddMarker(lngLat);
-            }
+        } catch (error) {
+            console.error('Errore nel gestire il click sulla mappa:', error);
         }
-    }, [stateapp, handleAddMarker, map]);
-
-
-
+    }, [stateapp, handleAddMarker]);
 
     useEffect(() => {
         // Inizializzazione della mappa
@@ -464,35 +433,15 @@ const MapboxMap = ({
         }
 
         // Gestione dei click sulla mappa
-        const handleMapClick = (e) => {
-            try {
-                if (stateapp === 'WPY' && handleAddMarker && map.current) {
-                    const { lng, lat } = e.lngLat;
-                    handleAddMarker({ lng, lat });
-                }
-            } catch (error) {
-                console.error('Errore nel gestire il click sulla mappa:', error);
-            }
-        };
-
-        // Gestione degli eventi
         if (map.current) {
-            try {
-                // Rimuovi tutti i listener precedenti
-                map.current.off('click');
-                
-                // Aggiungi il nuovo listener solo se siamo in modalità waypoint
-                if (stateapp === 'WPY') {
-                    map.current.on('click', handleMapClick);
-                    // Forza il ridimensionamento della mappa quando si attiva la modalità waypoint
-                    setTimeout(() => {
-                        if (map.current) {
-                            map.current.resize();
-                        }
-                    }, 100);
-                }
-            } catch (error) {
-                console.error('Errore nella gestione degli eventi:', error);
+            map.current.off('click', handleMapClick);
+            if (stateapp === 'WPY') {
+                map.current.on('click', handleMapClick);
+                setTimeout(() => {
+                    if (map.current) {
+                        map.current.resize();
+                    }
+                }, 100);
             }
         }
 
@@ -511,16 +460,12 @@ const MapboxMap = ({
 
         // Cleanup
         return () => {
-            try {
-                if (map.current) {
-                    map.current.off('click');
-                }
-                window.removeEventListener('resize', handleResize);
-            } catch (error) {
-                console.error('Errore nel cleanup:', error);
+            if (map.current) {
+                map.current.off('click', handleMapClick);
             }
+            window.removeEventListener('resize', handleResize);
         };
-    }, [stateapp, handleAddMarker, mapStyleUrl]);
+    }, [stateapp, handleMapClick, mapStyleUrl]);
 
     // Cleanup quando il componente viene smontato
     useEffect(() => {
