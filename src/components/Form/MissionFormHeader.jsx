@@ -6,24 +6,45 @@ import { MapContext } from '../MultiComponents/EcoMap';
 const MissionForm = () => {
     const { handleSubmitHeaderMission, handleChangeInHeader, headerData } = useContext(MapContext);
   
-    const [formData, setFormData] = useState(headerData);
+    const [formData, setFormData] = useState({
+        IdMission: 'NNN',
+        MissionNumber: 0,
+        TotalWayPoint: 0,
+        WpStart: 0,
+        Cycles: 0,
+        WpEnd: 0,
+        NMmode: -1,
+        NMnum: -1,
+        NMstart: 0,
+        IdMissionNext: 'NNN',
+        StandRadius: 0,
+    });
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        const newValue = name === "NMmode" ? Number(value) : value;
-        const allFormData = Object.fromEntries(new FormData(e.target.form).entries());
-        allFormData[name] = newValue;
-        handleChangeInHeader(allFormData);
-      };
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        handleSubmitHeaderMission(formData);
+        try {
+            const { name, value } = e.target;
+            const newValue = name === "NMmode" ? Number(value) : value;
+            const allFormData = Object.fromEntries(new FormData(e.target.form).entries());
+            allFormData[name] = newValue;
+            handleChangeInHeader(allFormData);
+        } catch (error) {
+            console.error('Errore nel gestire il cambio di valore:', error);
+        }
     };
 
-
+    const handleSubmit = (e) => {
+        try {
+            e.preventDefault();
+            handleSubmitHeaderMission(formData);
+        } catch (error) {
+            console.error('Errore nel submit del form:', error);
+        }
+    };
 
     useEffect(() => { 
-        setFormData(headerData);
+        if (headerData) {
+            setFormData(headerData);
+        }
     }, [headerData]);
 
     return (
@@ -35,7 +56,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="text"
                             name="IdMission"
-                            value={formData.IdMission}
+                            value={formData?.IdMission || ''}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -46,7 +67,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="MissionNumber"
-                            value={formData.MissionNumber}
+                            value={formData?.MissionNumber || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -57,7 +78,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="TotalWayPoint"
-                            value={formData.TotalWayPoint}
+                            value={formData?.TotalWayPoint || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -68,7 +89,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="WpStart"
-                            value={formData.WpStart}
+                            value={formData?.WpStart || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -79,7 +100,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="Cycles"
-                            value={formData.Cycles}
+                            value={formData?.Cycles || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -90,7 +111,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="WpEnd"
-                            value={formData.WpEnd}
+                            value={formData?.WpEnd || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -103,7 +124,7 @@ const MissionForm = () => {
                     <Form.Control
                         as="select"
                         name="NMmode"
-                        value={formData.NMmode}
+                        value={formData?.NMmode || -1}
                         onChange={handleChange}
                     >
                         <option value="0">mode one</option>
@@ -118,7 +139,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="NMnum"
-                            value={formData.NMnum}
+                            value={formData?.NMnum || -1}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -129,7 +150,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="NMstart"
-                            value={formData.NMstart}
+                            value={formData?.NMstart || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -140,7 +161,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="text"
                             name="IdMissionNext"
-                            value={formData.IdMissionNext}
+                            value={formData?.IdMissionNext || ''}
                             onChange={handleChange}
                         />
                     </Form.Group>
@@ -151,7 +172,7 @@ const MissionForm = () => {
                         <Form.Control
                             type="number"
                             name="StandRadius"
-                            value={formData.StandRadius}
+                            value={formData?.StandRadius || 0}
                             onChange={handleChange}
                         />
                     </Form.Group>
