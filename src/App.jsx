@@ -7,15 +7,18 @@ import { UserIdMonitoring } from './components/UserIdMonitoring';
 import { WebSocketProvider, WebSocketContext } from './components/Websockets';
 // Rimosso import BoatSensorsData - ora implementazione personalizzata
 import { Missions } from './components/Missions/Missions';
-import { EcoMap } from './components/MultiComponents/EcoMap';
+import { EcoMap, MapContext } from './components/MultiComponents/EcoMap';
 import { ChangeAppState } from './components/StateMonitoring';
 import MapboxMap from './components/MapBox/Mapbox';
 import MissionForm from './components/Form/MissionFormHeader';
 import MarkerList from './components/Markers/MarkersList';
 import JoystickReader from './components/Navigation/joy';
 import LiveStreamPlayer from './components/livestreamplayer';
+//casc
 
 export default class App extends React.Component {
+    static contextType = MapContext;
+
     constructor(props) {
         super(props);
 
@@ -24,7 +27,8 @@ export default class App extends React.Component {
             tocktock: "NNN",
             mapMode: "NNN",
             appst: "STD",
-            selectedMode: "Teleguidata"
+            selectedMode: "Teleguidata",
+            editorMode: false,
         };
     }
 
@@ -32,9 +36,26 @@ export default class App extends React.Component {
         this.setState({ tocktock: ticktock });
     };
 
-    render() {
-        const { tocktock, appst, user_id, selectedMode } = this.state;
+    toggleEditorMode = () => {
+        console.log('Click sul pulsante Apri Editor');
+        this.setState(prevState => {
+            const newState = {
+                editorMode: !prevState.editorMode,
+                appst: !prevState.editorMode ? 'WPY' : 'STD' // Forza sempre WPY quando si apre l'editor
+            };
+            // Se stiamo attivando l'editor, aggiungi un marker fittizio
+            if (!prevState.editorMode && this.context && this.context.handleAddMarker) {
+                this.context.handleAddMarker({ lng: 12.5, lat: 41.9 }); // esempio: Roma
+            }
+            console.log('Nuovo stato:', newState);
+            return newState;
+        });
+    }
 
+    render() {
+        const { tocktock, appst, user_id, selectedMode, editorMode } = this.state;
+        console.log('Render - editorMode:', editorMode);
+        
         const setAppState = (newState) => {
             this.setState({ appst: newState });
         };
@@ -1072,7 +1093,17 @@ class DroneBoatInterface extends React.Component {
                                 <div style={{ ...styles.waypoint, top: '50%', left: '80%' }}>3</div>
                                 <div style={{ ...styles.waypoint, top: '70%', left: '30%' }}>4</div>
                             </div>
-                            <button style={styles.blueBtn}>Apri Editor</button>
+                            <button 
+                                style={styles.blueBtn}
+                                onClick={() => {
+                                    console.log('Click sul pulsante Apri Editor');
+                                    this.setState(prevState => ({
+                                        editorMode: !prevState.editorMode
+                                    }));
+                                }}
+                            >
+                                {this.state.editorMode ? 'Chiudi Editor' : 'Apri Editor'}
+                            </button>
 
                             <div style={{ marginTop: '20px' }}>
                                 <ChangeAppState changeState={setAppState} uuid={safeUserId} />
@@ -1080,9 +1111,20 @@ class DroneBoatInterface extends React.Component {
                         </div>
 
                         {/* Main Content */}
-                        <div style={styles.mainContent}>
+                        <div style={{
+                            ...styles.mainContent,
+                            flex: this.state.editorMode ? '1' : '3',
+                            transition: 'all 0.3s ease-in-out',
+                            width: this.state.editorMode ? '100%' : 'auto',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}>
                             {/* Camera View MODIFICATA */}
-                            <div style={styles.cameraView}>
+                            <div style={{
+                                ...styles.cameraView,
+                                display: this.state.editorMode ? 'none' : 'flex',
+                                flex: this.state.editorMode ? '0' : '2'
+                            }}>
                                 {/* Video principale di sfondo - telecamera che manda delle 4 */}
                                 <div style={styles.mainCameraBackground}>
                                     <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
@@ -1103,40 +1145,40 @@ class DroneBoatInterface extends React.Component {
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* NUOVO: Header informazioni missione */}
-                            <div style={styles.missionStatusHeader}>
-                                <div style={styles.missionStatusContainer}>
-                                    <div style={styles.missionStatusLeft}>
-                                        <div style={{
-                                            ...styles.missionActiveIndicator,
-                                            backgroundColor: sensorsData.missionActive === 1 ? '#27ae60' : '#95a5a6'
-                                        }}>
-                                            {sensorsData.missionActive === 1 ? '🟢 MISSIONE ATTIVA' : '⚪ MISSIONE INATTIVA'}
-                                        </div>
-                                        <div style={styles.missionDetails}>
-                                            <span style={styles.missionName}>
-                                                📋 {sensorsData.idMissionNow && sensorsData.idMissionNow !== "" ? sensorsData.idMissionNow : "Nessuna missione"}
-                                            </span>
-                                            <span style={styles.missionNumber}>
-                                                #{sensorsData.nMissionNow !== "N/A" ? sensorsData.nMissionNow : "0"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div style={styles.missionStatusRight}>
-                                        <div style={styles.targetCoordinates}>
-                                            <div style={styles.coordinateItem}>
-                                                <span style={styles.coordinateLabel}>Target Lat:</span>
-                                                <span style={styles.coordinateValue}>
-                                                    {sensorsData.rifLatMission !== "N/A" ? parseFloat(sensorsData.rifLatMission).toFixed(6) + "°" : "N/A"}
+                                {/* NUOVO: Header informazioni missione */}
+                                <div style={styles.missionStatusHeader}>
+                                    <div style={styles.missionStatusContainer}>
+                                        <div style={styles.missionStatusLeft}>
+                                            <div style={{
+                                                ...styles.missionActiveIndicator,
+                                                backgroundColor: sensorsData.missionActive === 1 ? '#27ae60' : '#95a5a6'
+                                            }}>
+                                                {sensorsData.missionActive === 1 ? '🟢 MISSIONE ATTIVA' : '⚪ MISSIONE INATTIVA'}
+                                            </div>
+                                            <div style={styles.missionDetails}>
+                                                <span style={styles.missionName}>
+                                                    📋 {sensorsData.idMissionNow && sensorsData.idMissionNow !== "" ? sensorsData.idMissionNow : "Nessuna missione"}
+                                                </span>
+                                                <span style={styles.missionNumber}>
+                                                    #{sensorsData.nMissionNow !== "N/A" ? sensorsData.nMissionNow : "0"}
                                                 </span>
                                             </div>
-                                            <div style={styles.coordinateItem}>
-                                                <span style={styles.coordinateLabel}>Target Lon:</span>
-                                                <span style={styles.coordinateValue}>
-                                                    {sensorsData.rifLonMission !== "N/A" ? parseFloat(sensorsData.rifLonMission).toFixed(6) + "°" : "N/A"}
-                                                </span>
+                                        </div>
+                                        <div style={styles.missionStatusRight}>
+                                            <div style={styles.targetCoordinates}>
+                                                <div style={styles.coordinateItem}>
+                                                    <span style={styles.coordinateLabel}>Target Lat:</span>
+                                                    <span style={styles.coordinateValue}>
+                                                        {sensorsData.rifLatMission !== "N/A" ? parseFloat(sensorsData.rifLatMission).toFixed(6) + "°" : "N/A"}
+                                                    </span>
+                                                </div>
+                                                <div style={styles.coordinateItem}>
+                                                    <span style={styles.coordinateLabel}>Target Lon:</span>
+                                                    <span style={styles.coordinateValue}>
+                                                        {sensorsData.rifLonMission !== "N/A" ? parseFloat(sensorsData.rifLonMission).toFixed(6) + "°" : "N/A"}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1144,49 +1186,77 @@ class DroneBoatInterface extends React.Component {
                             </div>
 
                             {/* Map View */}
-                            <div style={styles.mapView}>
+                            <div style={{
+                                ...styles.mapView,
+                                flex: this.state.editorMode ? '1' : '1',
+                                height: this.state.editorMode ? 'calc(100vh - 60px)' : 'auto',
+                                minHeight: this.state.editorMode ? 'calc(100vh - 60px)' : '400px',
+                                transition: 'all 0.3s ease-in-out',
+                                position: 'relative',
+                                width: '100%'
+                            }}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
-
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    top: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bottom: 0, 
+                                    zIndex: 1,
+                                    height: this.state.editorMode ? '100%' : 'auto',
+                                    width: '100%'
+                                }}>
                                     <MapboxMap
                                         stateapp={safeAppst}
                                         missionWaypoints={showMissionOnMap ? missionWaypoints : null}
                                         selectedMission={showMissionOnMap ? safeSelectedMission : null}
                                     />
                                 </div>
+                            </div>
 
-                                {safeAppst === "MSS" && (
-                                    <div style={styles.overlayPanel}>
-                                        <div style={{
-                                            ...styles.hideNoDataText,
-                                            opacity: (missionsTree && missionsTree.Children && missionsTree.Children.length > 0) ? 1 : 0
-                                        }}>
-                                            <Missions stateapp={safeAppst} userid={safeUserId} />
-                                        </div>
-                                    </div>
-                                )}
-                                {safeAppst === "WPY" && (
-                                    <div style={styles.overlayPanel}>
-                                        <MissionForm stateapp={safeAppst} userid={safeUserId} />
-                                        <MarkerList stateapp={safeAppst} userid={safeUserId} />
-                                    </div>
-                                )}
-
-                                <div style={styles.mapInfoBottom}>
-                                    <div>TEL_MODE_2 - Con mantenimento rotta</div>
-                                    <div>Autonomia: 4.5h</div>
-                                    <div>Distanza: 120m</div>
-                                    {showMissionOnMap && safeSelectedMission && (
-                                        <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                                            Missione: {this.getMissionName(safeSelectedMission)}
-                                        </div>
-                                    )}
+                            {/* Tabella Waypoints sotto la mappa, a tutta larghezza */}
+                            {this.state.editorMode && (
+                                <div style={{ width: '100%', background: '#fff', padding: '20px 0', margin: 0 }}>
+                                    <MarkerList editorMode={this.state.editorMode} autoSubmit={this.state.editorMode} />
                                 </div>
+                            )}
+
+                            {safeAppst === "MSS" && (
+                                <div style={styles.overlayPanel}>
+                                    <div style={{
+                                        ...styles.hideNoDataText,
+                                        opacity: (missionsTree && missionsTree.Children && missionsTree.Children.length > 0) ? 1 : 0
+                                    }}>
+                                        <Missions stateapp={safeAppst} userid={safeUserId} />
+                                    </div>
+                                </div>
+                            )}
+                            {safeAppst === "WPY" && (
+                                <div style={styles.overlayPanel}>
+                                    <MissionForm stateapp={safeAppst} userid={safeUserId} />
+                                    <MarkerList stateapp={safeAppst} userid={safeUserId} />
+                                </div>
+                            )}
+
+                            <div style={styles.mapInfoBottom}>
+                                <div>TEL_MODE_2 - Con mantenimento rotta</div>
+                                <div>Autonomia: 4.5h</div>
+                                <div>Distanza: 120m</div>
+                                {showMissionOnMap && safeSelectedMission && (
+                                    <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                                        Missione: {this.getMissionName(safeSelectedMission)}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         {/* Right Sidebar */}
-                        <div style={styles.rightSidebar}>
+                        <div style={{
+                            ...styles.rightSidebar,
+                            display: this.state.editorMode ? 'none' : 'block',
+                            transition: 'all 0.3s ease-in-out',
+                            width: this.state.editorMode ? '0' : '300px'
+                        }}>
                             <div style={styles.sectionTitle}>Telemetria</div>
 
                             {/* SEZIONE DATI SENSORI PERSONALIZZATA */}
@@ -1690,11 +1760,12 @@ class DroneBoatInterface extends React.Component {
 // Styles object AGGIORNATO con i nuovi stili per la camera
 const styles = {
     body: {
+        width: '100vw',
+        height: '100vh',
         margin: 0,
         padding: 0,
-        boxSizing: 'border-box',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#f0f0f0'
+        overflow: 'hidden',
+        position: 'relative'
     },
     header: {
         display: 'flex',

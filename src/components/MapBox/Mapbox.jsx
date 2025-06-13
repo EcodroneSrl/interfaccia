@@ -367,9 +367,14 @@ const MapboxMap = ({
 
 
     const funcOnMove = () => {
-        setLng(map.current.getCenter().lng.toFixed(4));
-        setLat(map.current.getCenter().lat.toFixed(4));
-        setZoom(map.current.getZoom().toFixed(2));
+        try {
+            if (!map.current) return;
+            setLng(map.current.getCenter().lng.toFixed(4));
+            setLat(map.current.getCenter().lat.toFixed(4));
+            setZoom(map.current.getZoom().toFixed(2));
+        } catch (error) {
+            console.error('Errore nel movimento della mappa:', error);
+        }
     }
 
     // Funzione per centrare manualmente sulla barca
@@ -438,34 +443,84 @@ const MapboxMap = ({
 
 
     useEffect(() => {
-
+        // Inizializzazione della mappa
         if (!map.current) {
-            map.current = new mapboxgl.Map({
-                container: mapContainer.current,
-                style: mapStyleUrl, // Usa il nuovo stile
-                center: [lng, lat],
-                zoom: 9,
-            });
+            try {
+                map.current = new mapboxgl.Map({
+                    container: mapContainer.current,
+                    style: mapStyleUrl,
+                    center: [lng, lat],
+                    zoom: 9,
+                });
 
-            markerRef.current = new mapboxgl.Marker({ color: 'red' })
-                .setLngLat([lng, lat])
-                .addTo(map.current);
+                markerRef.current = new mapboxgl.Marker({ color: 'red' })
+                    .setLngLat([lng, lat])
+                    .addTo(map.current);
 
-            map.current.on('move', funcOnMove);
+                map.current.on('move', funcOnMove);
+            } catch (error) {
+                console.error('Errore nell\'inizializzazione della mappa:', error);
+            }
         }
 
-        if (stateapp === 'WPY') {
-
-            map.current.on('click', funcOnClick);
-        } else {
-            map.current.off('click', funcOnClick);
-        }
-
-        return () => {
-            map.current.off('click', funcOnClick);
+        // Gestione dei click sulla mappa
+        const handleMapClick = (e) => {
+            try {
+                if (stateapp === 'WPY' && handleAddMarker && map.current) {
+                    const { lng, lat } = e.lngLat;
+                    handleAddMarker({ lng, lat });
+                }
+            } catch (error) {
+                console.error('Errore nel gestire il click sulla mappa:', error);
+            }
         };
 
-    }, [stateapp, handleAddMarker, funcOnClick, mapStyleUrl, clearMap, autoCenter]);
+        // Gestione degli eventi
+        if (map.current) {
+            try {
+                // Rimuovi tutti i listener precedenti
+                map.current.off('click');
+                
+                // Aggiungi il nuovo listener solo se siamo in modalità waypoint
+                if (stateapp === 'WPY') {
+                    map.current.on('click', handleMapClick);
+                    // Forza il ridimensionamento della mappa quando si attiva la modalità waypoint
+                    setTimeout(() => {
+                        if (map.current) {
+                            map.current.resize();
+                        }
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Errore nella gestione degli eventi:', error);
+            }
+        }
+
+        // Listener per il ridimensionamento
+        const handleResize = () => {
+            try {
+                if (map.current) {
+                    map.current.resize();
+                }
+            } catch (error) {
+                console.error('Errore nel ridimensionamento:', error);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup
+        return () => {
+            try {
+                if (map.current) {
+                    map.current.off('click');
+                }
+                window.removeEventListener('resize', handleResize);
+            } catch (error) {
+                console.error('Errore nel cleanup:', error);
+            }
+        };
+    }, [stateapp, handleAddMarker, mapStyleUrl]);
 
     // Cleanup quando il componente viene smontato
     useEffect(() => {
@@ -563,7 +618,23 @@ const MapboxMap = ({
                 )}
             </div>
 
-            <div ref={mapContainer} className="map-container" style={{ minHeight: '1000px' }} />
+            {/* Aggiungo il contenitore della mappa con stile */}
+            <div 
+                ref={mapContainer} 
+                className="map-container"
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 1,
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}
+            />
             {stateapp == 'WPY' && <MissionMarker map={map.current} stateapp={stateapp} />}
         </div>
     );

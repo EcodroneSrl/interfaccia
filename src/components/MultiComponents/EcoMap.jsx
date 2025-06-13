@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { Row, Col, Container } from 'react-bootstrap';
 import { WebSocketContext } from '../Websockets';
 
 const MapContext = React.createContext();
@@ -28,6 +27,8 @@ export const EcoMap = ({ children, appst, uuid }) => {
         IdMissionNext: 'NNN',
         StandRadius: 0,
     });
+
+    const [stateapp, setStateApp] = useState(appst);
 
     const createNewFeature = (
         coordinates = [],
@@ -289,18 +290,23 @@ export const EcoMap = ({ children, appst, uuid }) => {
         }));
     }, [mapmarkers]);
 
+    useEffect(() => {
+        if (stateapp === 'WPY' && mapmarkers.features.length === 0) {
+            handleAddMarker({ lng: 12.5, lat: 41.9 }); // esempio: Roma
+        }
+    }, [stateapp]);
+
     return (
         <MapContext.Provider value={{
-            handleSinglePointSingleValueChange,
-            handlePositionChangeMarker,
-            handleRemoveMarker,
-            handleSubmitHeaderMission,
-            handleSubmitFormPoints,
-            handleAddMarker,
             mapmarkers,
+            handleAddMarker,
+            handleRemoveMarker,
+            handlePositionChangeMarker,
+            handleSubmitFormPoints,
             handleChangeInHeader,
+            handleSubmitHeaderMission,
             headerData,
-            ResetMarkers
+            stateapp
         }}>
             {children}
         </MapContext.Provider>
