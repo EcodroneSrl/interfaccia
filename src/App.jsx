@@ -1746,11 +1746,12 @@ class DroneBoatInterface extends React.Component {
 // Styles object AGGIORNATO con i nuovi stili per la camera
 const styles = {
     body: {
+        width: '100vw',
+        height: '100vh',
         margin: 0,
         padding: 0,
-        boxSizing: 'border-box',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#f0f0f0'
+        overflow: 'hidden',
+        position: 'relative'
     },
     header: {
         display: 'flex',

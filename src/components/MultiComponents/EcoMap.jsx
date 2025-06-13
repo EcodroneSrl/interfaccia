@@ -302,7 +302,9 @@ export const EcoMap = ({ children, appst, uuid }) => {
             headerData,
             ResetMarkers
         }}>
-            {children}
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                {children}
+            </div>
         </MapContext.Provider>
     );
 };
