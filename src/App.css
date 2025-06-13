@@ -1,4 +1,43 @@
+* Aggiungi questo CSS al file src/App.css per l'animazione dello spinner */
 
+@keyframes spin {
+    0%
+
+{
+    transform: rotate(0deg);
+}
+
+100% {
+    transform: rotate(360deg);
+}
+
+}
+
+/* Stili aggiuntivi per la modalità editor */
+.editor-mode-active {
+    background-color: #f8f9fa !important;
+}
+
+.sidebar-editor-highlight {
+    border-left: 4px solid #007bff;
+    box-shadow: 2px 0 8px rgba(0,123,255,0.2);
+}
+
+.map-editor-glow {
+    box-shadow: 0 0 20px rgba(0,123,255,0.4);
+    border: 3px solid #007bff;
+}
+
+/* Transizioni smooth per il toggle */
+.layout-transition {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Hover effects per i pulsanti editor */
+.editor-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
 /*html, body, #root, #root > div {
     height: 100%;
     
