@@ -574,7 +574,10 @@ const MapboxMap = ({
                     right: 0,
                     bottom: 0,
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    zIndex: 1,
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             />
             {stateapp == 'WPY' && <MissionMarker map={map.current} stateapp={stateapp} />}

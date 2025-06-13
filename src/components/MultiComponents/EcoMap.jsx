@@ -290,19 +290,14 @@ export const EcoMap = ({ children, appst, uuid }) => {
     }, [mapmarkers]);
 
     return (
-        <MapContext.Provider value={{
-            handleSinglePointSingleValueChange,
-            handlePositionChangeMarker,
-            handleRemoveMarker,
-            handleSubmitHeaderMission,
-            handleSubmitFormPoints,
-            handleAddMarker,
-            mapmarkers,
-            handleChangeInHeader,
-            headerData,
-            ResetMarkers
-        }}>
-            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+        <MapContext.Provider value={{ handleAddMarker, mapmarkers, clearMap: ResetMarkers }}>
+            <div style={{ 
+                width: '100%', 
+                height: '100%', 
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column'
+            }}>
                 {children}
             </div>
         </MapContext.Provider>
