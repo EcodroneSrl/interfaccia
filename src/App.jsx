@@ -24,13 +24,20 @@ export default class App extends React.Component {
             tocktock: "NNN",
             mapMode: "NNN",
             appst: "STD",
-            selectedMode: "Teleguidata"
+            selectedMode: "Teleguidata",
+            editorMode: false,
         };
     }
 
     handleLoginSuccess = (ticktock) => {
         this.setState({ tocktock: ticktock });
     };
+
+    toggleEditorMode = () => {
+        this.setState(prevState => ({
+            editorMode: !prevState.editorMode
+        }));
+    }
 
     render() {
         const { tocktock, appst, user_id, selectedMode } = this.state;
@@ -1080,72 +1087,50 @@ class DroneBoatInterface extends React.Component {
                         </div>
 
                         {/* Main Content */}
-                        <div style={styles.mainContent}>
-                            {/* Camera View MODIFICATA */}
-                            <div style={styles.cameraView}>
-                                {/* Video principale di sfondo - telecamera che manda delle 4 */}
-                                <div style={styles.mainCameraBackground}>
-                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
-                                </div>
-                                
-                                {/* Overlay con le 3 telecamere secondarie - centrate e più grandi */}
-                                <div style={styles.cameraOverlay}>
-                                    {/* Sinistra: quella che era centrale (stream2) */}
-                                    <div style={styles.overlayCamera}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
-                                    </div>
-                                    {/* Centro: telecamera posteriore */}
-                                    <div style={styles.overlayCamera}>
+                        <div style={{
+                            ...styles.mainContent,
+                            flex: this.state.editorMode ? '1' : '3',
+                            transition: 'flex 0.3s ease-in-out'
+                        }}>
+                            {/* Camera View */}
+                            <div style={{
+                                ...styles.cameraView,
+                                display: this.state.editorMode ? 'none' : 'flex'
+                            }}>
+                                <h2>Camera Principale</h2>
+                                <div style={styles.cameraOptions}>
+                                    <div style={styles.cameraOption}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
                                     </div>
-                                    {/* Destra: quella che era grande (stream1 - frontale) */}
-                                    <div style={styles.overlayCamera}>
+                                    <div style={styles.cameraOption}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* NUOVO: Header informazioni missione */}
-                            <div style={styles.missionStatusHeader}>
-                                <div style={styles.missionStatusContainer}>
-                                    <div style={styles.missionStatusLeft}>
-                                        <div style={{
-                                            ...styles.missionActiveIndicator,
-                                            backgroundColor: sensorsData.missionActive === 1 ? '#27ae60' : '#95a5a6'
-                                        }}>
-                                            {sensorsData.missionActive === 1 ? '🟢 MISSIONE ATTIVA' : '⚪ MISSIONE INATTIVA'}
-                                        </div>
-                                        <div style={styles.missionDetails}>
-                                            <span style={styles.missionName}>
-                                                📋 {sensorsData.idMissionNow && sensorsData.idMissionNow !== "" ? sensorsData.idMissionNow : "Nessuna missione"}
-                                            </span>
-                                            <span style={styles.missionNumber}>
-                                                #{sensorsData.nMissionNow !== "N/A" ? sensorsData.nMissionNow : "0"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div style={styles.missionStatusRight}>
-                                        <div style={styles.targetCoordinates}>
-                                            <div style={styles.coordinateItem}>
-                                                <span style={styles.coordinateLabel}>Target Lat:</span>
-                                                <span style={styles.coordinateValue}>
-                                                    {sensorsData.rifLatMission !== "N/A" ? parseFloat(sensorsData.rifLatMission).toFixed(6) + "°" : "N/A"}
-                                                </span>
-                                            </div>
-                                            <div style={styles.coordinateItem}>
-                                                <span style={styles.coordinateLabel}>Target Lon:</span>
-                                                <span style={styles.coordinateValue}>
-                                                    {sensorsData.rifLonMission !== "N/A" ? parseFloat(sensorsData.rifLonMission).toFixed(6) + "°" : "N/A"}
-                                                </span>
-                                            </div>
-                                        </div>
+                                    <div style={styles.cameraOption}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
                                     </div>
                                 </div>
+                                <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
                             </div>
 
                             {/* Map View */}
-                            <div style={styles.mapView}>
+                            <div style={{
+                                ...styles.mapView,
+                                flex: this.state.editorMode ? '1' : '1',
+                                height: this.state.editorMode ? '100vh' : 'auto'
+                            }}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
+                                <button 
+                                    style={{
+                                        ...styles.blueBtn,
+                                        position: 'absolute',
+                                        top: '10px',
+                                        right: '10px',
+                                        zIndex: 1000
+                                    }}
+                                    onClick={this.toggleEditorMode}
+                                >
+                                    {this.state.editorMode ? 'Chiudi Editor' : 'Apri Editor'}
+                                </button>
 
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
                                     <MapboxMap
@@ -1186,7 +1171,11 @@ class DroneBoatInterface extends React.Component {
                         </div>
 
                         {/* Right Sidebar */}
-                        <div style={styles.rightSidebar}>
+                        <div style={{
+                            ...styles.rightSidebar,
+                            display: this.state.editorMode ? 'none' : 'block',
+                            transition: 'display 0.3s ease-in-out'
+                        }}>
                             <div style={styles.sectionTitle}>Telemetria</div>
 
                             {/* SEZIONE DATI SENSORI PERSONALIZZATA */}
