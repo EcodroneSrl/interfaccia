@@ -20,14 +20,10 @@ const MarkerList = ({ editorMode, autoSubmit }) => {
                 wrad: marker.extra.wrad,
             }));
             setFormData(initialData);
+        } else if (editorMode) {
+            setFormData([]); // Tabella vuota in modalità editor
         }
-    }, [mapmarkers]);
-
-    useEffect(() => {
-        if (editorMode) {
-            setIsButtonVisible(false); // Simula il click su Submit Waypoint
-        }
-    }, [editorMode]);
+    }, [mapmarkers, editorMode]);
 
     useEffect(() => {
         if (autoSubmit) {
@@ -59,8 +55,8 @@ const MarkerList = ({ editorMode, autoSubmit }) => {
         setIsButtonVisible(false);
     };
 
-    // Mostra la tabella se ci sono marker OPPURE se l'editor è attivo
-    if (mapmarkers.features.length === 0 && !editorMode) {
+    // Mostra la tabella solo se editorMode è attivo
+    if (!editorMode) {
         return null;
     } else {
         return (
@@ -81,83 +77,91 @@ const MarkerList = ({ editorMode, autoSubmit }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {formData.map((data, index) => (
-                                <tr key={index}>
-                                    <td>{index}</td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="lng"
-                                            id={`lng-${index}-marker`}
-                                            value={data.lng}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="Longitude"
-                                            step="0.000001"
-                                        />
-                                    </td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="lat"
-                                            id={`lat-${index}-marker`}
-                                            value={data.lat}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="Latitude"
-                                            step="0.000001"
-                                        />
-                                    </td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="navmode"
-                                            value={data.navmode}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="Mode"
-                                            step="1"
-                                        />
-                                    </td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="pointype"
-                                            value={data.pointype}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="Type"
-                                            step="1"
-                                        />
-                                    </td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="mon"
-                                            value={data.mon}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="Monit"
-                                            step="1"
-                                        />
-                                    </td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="amode"
-                                            value={data.amode}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="ModeA"
-                                            step="1"
-                                        />
-                                    </td>
-                                    <td>
-                                        <Form.Control
-                                            type="number"
-                                            name="wrad"
-                                            value={data.wrad}
-                                            onChange={(e) => handleInputChange(e, index)}
-                                            placeholder="Rad"
-                                            step="0.000001"
-                                        />
+                            {formData.length === 0 ? (
+                                <tr>
+                                    <td colSpan="8" style={{ textAlign: 'center', color: '#888' }}>
+                                        Nessun waypoint. Clicca sulla mappa per aggiungere un punto.
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                formData.map((data, index) => (
+                                    <tr key={index}>
+                                        <td>{index}</td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="lng"
+                                                id={`lng-${index}-marker`}
+                                                value={data.lng}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="Longitude"
+                                                step="0.000001"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="lat"
+                                                id={`lat-${index}-marker`}
+                                                value={data.lat}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="Latitude"
+                                                step="0.000001"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="navmode"
+                                                value={data.navmode}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="Mode"
+                                                step="1"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="pointype"
+                                                value={data.pointype}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="Type"
+                                                step="1"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="mon"
+                                                value={data.mon}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="Monit"
+                                                step="1"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="amode"
+                                                value={data.amode}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="ModeA"
+                                                step="1"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Form.Control
+                                                type="number"
+                                                name="wrad"
+                                                value={data.wrad}
+                                                onChange={(e) => handleInputChange(e, index)}
+                                                placeholder="Rad"
+                                                step="0.000001"
+                                            />
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </Table>
                     {isButtonVisible && (
