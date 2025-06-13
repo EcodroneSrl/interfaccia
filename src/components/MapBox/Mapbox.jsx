@@ -367,10 +367,14 @@ const MapboxMap = ({
 
 
     const funcOnMove = () => {
-        if (!map.current) return;
-        setLng(map.current.getCenter().lng.toFixed(4));
-        setLat(map.current.getCenter().lat.toFixed(4));
-        setZoom(map.current.getZoom().toFixed(2));
+        try {
+            if (!map.current) return;
+            setLng(map.current.getCenter().lng.toFixed(4));
+            setLat(map.current.getCenter().lat.toFixed(4));
+            setZoom(map.current.getZoom().toFixed(2));
+        } catch (error) {
+            console.error('Errore nel movimento della mappa:', error);
+        }
     }
 
     // Funzione per centrare manualmente sulla barca
@@ -439,48 +443,76 @@ const MapboxMap = ({
 
 
     useEffect(() => {
+        // Inizializzazione della mappa
         if (!map.current) {
-            map.current = new mapboxgl.Map({
-                container: mapContainer.current,
-                style: mapStyleUrl,
-                center: [lng, lat],
-                zoom: 9,
-            });
+            try {
+                map.current = new mapboxgl.Map({
+                    container: mapContainer.current,
+                    style: mapStyleUrl,
+                    center: [lng, lat],
+                    zoom: 9,
+                });
 
-            markerRef.current = new mapboxgl.Marker({ color: 'red' })
-                .setLngLat([lng, lat])
-                .addTo(map.current);
+                markerRef.current = new mapboxgl.Marker({ color: 'red' })
+                    .setLngLat([lng, lat])
+                    .addTo(map.current);
 
-            map.current.on('move', funcOnMove);
+                map.current.on('move', funcOnMove);
+            } catch (error) {
+                console.error('Errore nell\'inizializzazione della mappa:', error);
+            }
         }
 
         // Gestione dei click sulla mappa
         const handleMapClick = (e) => {
-            if (stateapp === 'WPY' && handleAddMarker) {
-                const { lng, lat } = e.lngLat;
-                handleAddMarker({ lng, lat });
+            try {
+                if (stateapp === 'WPY' && handleAddMarker && map.current) {
+                    const { lng, lat } = e.lngLat;
+                    handleAddMarker({ lng, lat });
+                }
+            } catch (error) {
+                console.error('Errore nel gestire il click sulla mappa:', error);
             }
         };
 
-        // Rimuovi eventuali listener precedenti
+        // Gestione degli eventi
         if (map.current) {
-            map.current.off('click');
-            map.current.on('click', handleMapClick);
+            try {
+                // Rimuovi tutti i listener precedenti
+                map.current.off('click');
+                
+                // Aggiungi il nuovo listener solo se siamo in modalità waypoint
+                if (stateapp === 'WPY') {
+                    map.current.on('click', handleMapClick);
+                }
+            } catch (error) {
+                console.error('Errore nella gestione degli eventi:', error);
+            }
         }
 
-        // Aggiungi listener per il ridimensionamento della finestra
+        // Listener per il ridimensionamento
         const handleResize = () => {
-            if (map.current) {
-                map.current.resize();
+            try {
+                if (map.current) {
+                    map.current.resize();
+                }
+            } catch (error) {
+                console.error('Errore nel ridimensionamento:', error);
             }
         };
+
         window.addEventListener('resize', handleResize);
 
+        // Cleanup
         return () => {
-            if (map.current) {
-                map.current.off('click');
+            try {
+                if (map.current) {
+                    map.current.off('click');
+                }
+                window.removeEventListener('resize', handleResize);
+            } catch (error) {
+                console.error('Errore nel cleanup:', error);
             }
-            window.removeEventListener('resize', handleResize);
         };
     }, [stateapp, handleAddMarker, mapStyleUrl]);
 
