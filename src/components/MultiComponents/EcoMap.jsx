@@ -290,6 +290,12 @@ export const EcoMap = ({ children, appst, uuid }) => {
         }));
     }, [mapmarkers]);
 
+    useEffect(() => {
+        if (stateapp === 'WPY' && mapmarkers.features.length === 0) {
+            handleAddMarker({ lng: 12.5, lat: 41.9 }); // esempio: Roma
+        }
+    }, [stateapp]);
+
     return (
         <MapContext.Provider value={{
             mapmarkers,
