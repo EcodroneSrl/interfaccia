@@ -34,14 +34,21 @@ export default class App extends React.Component {
     };
 
     toggleEditorMode = () => {
-        this.setState(prevState => ({
-            editorMode: !prevState.editorMode
-        }));
+        console.log('Toggle Editor Mode chiamato');
+        console.log('Stato attuale:', this.state.editorMode);
+        this.setState(prevState => {
+            const newState = {
+                editorMode: !prevState.editorMode
+            };
+            console.log('Nuovo stato:', newState);
+            return newState;
+        });
     }
 
     render() {
-        const { tocktock, appst, user_id, selectedMode } = this.state;
-
+        const { tocktock, appst, user_id, selectedMode, editorMode } = this.state;
+        console.log('Render - editorMode:', editorMode);
+        
         const setAppState = (newState) => {
             this.setState({ appst: newState });
         };
@@ -1095,12 +1102,14 @@ class DroneBoatInterface extends React.Component {
                         <div style={{
                             ...styles.mainContent,
                             flex: this.state.editorMode ? '1' : '3',
-                            transition: 'flex 0.3s ease-in-out'
+                            transition: 'all 0.3s ease-in-out',
+                            width: this.state.editorMode ? '100%' : 'auto'
                         }}>
                             {/* Camera View */}
                             <div style={{
                                 ...styles.cameraView,
-                                display: this.state.editorMode ? 'none' : 'flex'
+                                display: this.state.editorMode ? 'none' : 'flex',
+                                transition: 'all 0.3s ease-in-out'
                             }}>
                                 <h2>Camera Principale</h2>
                                 <div style={styles.cameraOptions}>
@@ -1167,7 +1176,8 @@ class DroneBoatInterface extends React.Component {
                         <div style={{
                             ...styles.rightSidebar,
                             display: this.state.editorMode ? 'none' : 'block',
-                            transition: 'display 0.3s ease-in-out'
+                            transition: 'all 0.3s ease-in-out',
+                            width: this.state.editorMode ? '0' : '300px'
                         }}>
                             <div style={styles.sectionTitle}>Telemetria</div>
 
