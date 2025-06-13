@@ -1184,11 +1184,20 @@ class DroneBoatInterface extends React.Component {
                                 flex: this.state.editorMode ? '1' : '1',
                                 height: this.state.editorMode ? 'calc(100vh - 60px)' : 'auto',
                                 minHeight: this.state.editorMode ? 'calc(100vh - 60px)' : '400px',
-                                transition: 'all 0.3s ease-in-out'
+                                transition: 'all 0.3s ease-in-out',
+                                position: 'relative'
                             }}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
 
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+                                <div style={{ 
+                                    position: 'absolute', 
+                                    top: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bottom: 0, 
+                                    zIndex: 1,
+                                    height: this.state.editorMode ? '100%' : 'auto'
+                                }}>
                                     <MapboxMap
                                         stateapp={safeAppst}
                                         missionWaypoints={showMissionOnMap ? missionWaypoints : null}
