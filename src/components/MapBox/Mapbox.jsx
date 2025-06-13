@@ -462,13 +462,15 @@ const MapboxMap = ({
         }
 
         // Gestione dei click sulla mappa per l'aggiunta di waypoint
-        if (stateapp === 'WPY') {
-            map.current.on('click', (e) => {
+        const handleMapClick = (e) => {
+            if (stateapp === 'WPY' && handleAddMarker) {
                 const { lng, lat } = e.lngLat;
                 handleAddMarker({ lng, lat });
-            });
-        } else {
-            map.current.off('click');
+            }
+        };
+
+        if (map.current) {
+            map.current.on('click', handleMapClick);
         }
 
         // Aggiungi listener per il ridimensionamento della finestra
@@ -481,7 +483,7 @@ const MapboxMap = ({
 
         return () => {
             if (map.current) {
-                map.current.off('click');
+                map.current.off('click', handleMapClick);
             }
             window.removeEventListener('resize', handleResize);
         };
