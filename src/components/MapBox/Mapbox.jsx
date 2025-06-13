@@ -563,7 +563,15 @@ const MapboxMap = ({
                 )}
             </div>
 
-            <div ref={mapContainer} className="map-container" style={{ minHeight: '1000px' }} />
+            <div ref={mapContainer} className="map-container" style={{ 
+                height: '100%',
+                width: '100%',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0
+            }} />
             {stateapp == 'WPY' && <MissionMarker map={map.current} stateapp={stateapp} />}
         </div>
     );
