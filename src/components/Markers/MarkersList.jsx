@@ -1,24 +1,15 @@
 import React, { useEffect, useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Form, Col, Row } from 'react-bootstrap';
+import { Button, Form, Col, Row, Table } from 'react-bootstrap';
 import { MapContext } from '../MultiComponents/EcoMap';
 
-
-
-
-const MarkerList = () => {
-
-
+const MarkerList = ({ editorMode }) => {
     const { mapmarkers, handleSubmitFormPoints, handleSinglePointSingleValueChange } = useContext(MapContext);
-
     const [formData, setFormData] = useState([]);
     const [isButtonVisible, setIsButtonVisible] = useState(true);
 
     useEffect(() => {
-
-
         if (mapmarkers.features.length > 0) {
-
             const initialData = mapmarkers.features.map(marker => ({
                 lng: marker.geometry.coordinates[0],
                 lat: marker.geometry.coordinates[1],
@@ -28,45 +19,27 @@ const MarkerList = () => {
                 amode: marker.extra.amode,
                 wrad: marker.extra.wrad,
             }));
-
             setFormData(initialData);
         }
-        
-
     }, [mapmarkers]);
 
     const handleInputChange = (e, index) => {
-
-
-        //(idmarker, typeevent, dataevent)
         const { name, value } = e.target;
-
-
         const updatedData = [...formData];
-
         var data = [];
-
         if (name.toString() === "lng" || name.toString() === "lat") {
             let lngelement = document.getElementById("lng-" + index + "-marker")
             let latelement = document.getElementById("lat-" + index + "-marker")
-
             var val_lng = lngelement.value
             var val_lat = latelement.value;
-
             data = [val_lng, val_lat]
-
         } else {
-
             data = [value];
         }
-
         updatedData[index][name] = value;
         setFormData(updatedData);
-
         handleSinglePointSingleValueChange(index, name, data)
     }
-
-
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -74,51 +47,54 @@ const MarkerList = () => {
         setIsButtonVisible(false);
     };
 
-    if (mapmarkers.features.length === 0) {
+    // Mostra la tabella se ci sono marker OPPURE se l'editor è attivo
+    if (mapmarkers.features.length === 0 && !editorMode) {
         return null;
     } else {
         return (
-            <div>
-                <h2>Markers List</h2>
-               
+            <div style={{ width: '100%', marginTop: '20px' }}>
+                <h2>Waypoints</h2>
                 <Form id="form-map-points" onSubmit={handleSubmit}>
-                    {formData.map((data, index) => (
-                        <div key={index} style={{ border: '1px solid rgba(0, 0, 0, 0.4)', marginBottom: '10px', padding: '10px' }}>
-                            <Row key={index} >
-                                <Col>
-                                    <Form.Label>Marker {index}</Form.Label>
-                                </Col>
-                                <Col>
-                                    <Form.Group controlId={`lng-${index}-marker`}>
-                                        <Form.Label>Longitude</Form.Label>
+                    <Table striped bordered hover responsive>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Longitude</th>
+                                <th>Latitude</th>
+                                <th>Nav Mode</th>
+                                <th>Point Type</th>
+                                <th>Monitoring Op</th>
+                                <th>Arrive Mode</th>
+                                <th>Radius</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {formData.map((data, index) => (
+                                <tr key={index}>
+                                    <td>{index}</td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="lng"
+                                            id={`lng-${index}-marker`}
                                             value={data.lng}
                                             onChange={(e) => handleInputChange(e, index)}
                                             placeholder="Longitude"
                                             step="0.000001"
                                         />
-                                    </Form.Group>
-                                </Col>
-                                <Col>
-                                    <Form.Group controlId={`lat-${index}-marker`}>
-                                        <Form.Label>Latitude</Form.Label>
+                                    </td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="lat"
+                                            id={`lat-${index}-marker`}
                                             value={data.lat}
                                             onChange={(e) => handleInputChange(e, index)}
                                             placeholder="Latitude"
                                             step="0.000001"
                                         />
-                                    </Form.Group>
-                                </Col>
-                                </Row>
-                                <Row>
-                                <Col>
-                                    <Form.Group controlId={`navmode-${index}-marker`}>
-                                        <Form.Label>Nav Mode</Form.Label>
+                                    </td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="navmode"
@@ -127,11 +103,8 @@ const MarkerList = () => {
                                             placeholder="Mode"
                                             step="1"
                                         />
-                                    </Form.Group>
-                                </Col>
-                                <Col>
-                                    <Form.Group controlId={`ptype-${index}-marker`}>
-                                        <Form.Label>Point Type</Form.Label>
+                                    </td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="pointype"
@@ -140,50 +113,41 @@ const MarkerList = () => {
                                             placeholder="Type"
                                             step="1"
                                         />
-                                    </Form.Group>
-                                </Col>
-                                <Col>
-                                    <Form.Group controlId={`mon-${index}-marker`}>
-                                        <Form.Label>Monitoring Op</Form.Label>
+                                    </td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="mon"
-                                            defaultValue={data.mon}
+                                            value={data.mon}
                                             onChange={(e) => handleInputChange(e, index)}
                                             placeholder="Monit"
                                             step="1"
                                         />
-                                    </Form.Group>
-                                </Col>
-                                <Col>
-                                    <Form.Group controlId={`amode-${index}-marker`}>
-                                        <Form.Label>Arrive Mode</Form.Label>
+                                    </td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="amode"
-                                            defaultValue={data.amode}
+                                            value={data.amode}
                                             onChange={(e) => handleInputChange(e, index)}
                                             placeholder="ModeA"
                                             step="1"
                                         />
-                                    </Form.Group>
-                                </Col>
-                                <Col>
-                                    <Form.Group controlId={`wrad-${index}-marker`}>
-                                        <Form.Label>Radius</Form.Label>
+                                    </td>
+                                    <td>
                                         <Form.Control
                                             type="number"
                                             name="wrad"
-                                            defaultValue={data.wrad}
+                                            value={data.wrad}
                                             onChange={(e) => handleInputChange(e, index)}
                                             placeholder="Rad"
                                             step="0.000001"
                                         />
-                                    </Form.Group>
-                                </Col>
-                            </Row>
-                        </div>
-                    ))}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
                     {isButtonVisible && (
                         <Button variant="primary" id="sub-points" type="submit">
                             Submit
@@ -193,6 +157,10 @@ const MarkerList = () => {
             </div>
         );
     }
+};
+
+MarkerList.propTypes = {
+    editorMode: PropTypes.bool
 };
 
 export default MarkerList;

@@ -1186,10 +1186,10 @@ class DroneBoatInterface extends React.Component {
                                 height: this.state.editorMode ? 'calc(100vh - 60px)' : 'auto',
                                 minHeight: this.state.editorMode ? 'calc(100vh - 60px)' : '400px',
                                 transition: 'all 0.3s ease-in-out',
-                                position: 'relative'
+                                position: 'relative',
+                                width: '100%'
                             }}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
-
                                 <div style={{ 
                                     position: 'absolute', 
                                     top: 0, 
@@ -1197,7 +1197,8 @@ class DroneBoatInterface extends React.Component {
                                     right: 0, 
                                     bottom: 0, 
                                     zIndex: 1,
-                                    height: this.state.editorMode ? '100%' : 'auto'
+                                    height: this.state.editorMode ? '100%' : 'auto',
+                                    width: '100%'
                                 }}>
                                     <MapboxMap
                                         stateapp={safeAppst}
@@ -1205,34 +1206,41 @@ class DroneBoatInterface extends React.Component {
                                         selectedMission={showMissionOnMap ? safeSelectedMission : null}
                                     />
                                 </div>
+                            </div>
 
-                                {safeAppst === "MSS" && (
-                                    <div style={styles.overlayPanel}>
-                                        <div style={{
-                                            ...styles.hideNoDataText,
-                                            opacity: (missionsTree && missionsTree.Children && missionsTree.Children.length > 0) ? 1 : 0
-                                        }}>
-                                            <Missions stateapp={safeAppst} userid={safeUserId} />
-                                        </div>
-                                    </div>
-                                )}
-                                {safeAppst === "WPY" && (
-                                    <div style={styles.overlayPanel}>
-                                        <MissionForm stateapp={safeAppst} userid={safeUserId} />
-                                        <MarkerList stateapp={safeAppst} userid={safeUserId} />
-                                    </div>
-                                )}
-
-                                <div style={styles.mapInfoBottom}>
-                                    <div>TEL_MODE_2 - Con mantenimento rotta</div>
-                                    <div>Autonomia: 4.5h</div>
-                                    <div>Distanza: 120m</div>
-                                    {showMissionOnMap && safeSelectedMission && (
-                                        <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                                            Missione: {this.getMissionName(safeSelectedMission)}
-                                        </div>
-                                    )}
+                            {/* Tabella Waypoints sotto la mappa, a tutta larghezza */}
+                            {this.state.editorMode && (
+                                <div style={{ width: '100%', background: '#fff', padding: '20px 0', margin: 0 }}>
+                                    <MarkerList editorMode={this.state.editorMode} />
                                 </div>
+                            )}
+
+                            {safeAppst === "MSS" && (
+                                <div style={styles.overlayPanel}>
+                                    <div style={{
+                                        ...styles.hideNoDataText,
+                                        opacity: (missionsTree && missionsTree.Children && missionsTree.Children.length > 0) ? 1 : 0
+                                    }}>
+                                        <Missions stateapp={safeAppst} userid={safeUserId} />
+                                    </div>
+                                </div>
+                            )}
+                            {safeAppst === "WPY" && (
+                                <div style={styles.overlayPanel}>
+                                    <MissionForm stateapp={safeAppst} userid={safeUserId} />
+                                    <MarkerList stateapp={safeAppst} userid={safeUserId} />
+                                </div>
+                            )}
+
+                            <div style={styles.mapInfoBottom}>
+                                <div>TEL_MODE_2 - Con mantenimento rotta</div>
+                                <div>Autonomia: 4.5h</div>
+                                <div>Distanza: 120m</div>
+                                {showMissionOnMap && safeSelectedMission && (
+                                    <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                                        Missione: {this.getMissionName(safeSelectedMission)}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
