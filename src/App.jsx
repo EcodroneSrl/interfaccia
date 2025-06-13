@@ -1088,7 +1088,12 @@ class DroneBoatInterface extends React.Component {
                             </div>
                             <button 
                                 style={styles.blueBtn}
-                                onClick={this.toggleEditorMode}
+                                onClick={() => {
+                                    console.log('Click sul pulsante Apri Editor');
+                                    this.setState(prevState => ({
+                                        editorMode: !prevState.editorMode
+                                    }));
+                                }}
                             >
                                 {this.state.editorMode ? 'Chiudi Editor' : 'Apri Editor'}
                             </button>
@@ -1105,25 +1110,66 @@ class DroneBoatInterface extends React.Component {
                             transition: 'all 0.3s ease-in-out',
                             width: this.state.editorMode ? '100%' : 'auto'
                         }}>
-                            {/* Camera View */}
-                            <div style={{
-                                ...styles.cameraView,
-                                display: this.state.editorMode ? 'none' : 'flex',
-                                transition: 'all 0.3s ease-in-out'
-                            }}>
-                                <h2>Camera Principale</h2>
-                                <div style={styles.cameraOptions}>
-                                    <div style={styles.cameraOption}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
-                                    </div>
-                                    <div style={styles.cameraOption}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
-                                    </div>
-                                    <div style={styles.cameraOption}>
+                            {/* Camera View MODIFICATA */}
+                            <div style={styles.cameraView}>
+                                {/* Video principale di sfondo - telecamera che manda delle 4 */}
+                                <div style={styles.mainCameraBackground}>
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
+                                </div>
+                                
+                                {/* Overlay con le 3 telecamere secondarie - centrate e più grandi */}
+                                <div style={styles.cameraOverlay}>
+                                    {/* Sinistra: quella che era centrale (stream2) */}
+                                    <div style={styles.overlayCamera}>
                                         <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
                                     </div>
+                                    {/* Centro: telecamera posteriore */}
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                    </div>
+                                    {/* Destra: quella che era grande (stream1 - frontale) */}
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
+                                    </div>
                                 </div>
-                                <button style={{ ...styles.blueBtn, marginTop: '20px' }}>Cambia Vista</button>
+
+                                {/* NUOVO: Header informazioni missione */}
+                                <div style={styles.missionStatusHeader}>
+                                    <div style={styles.missionStatusContainer}>
+                                        <div style={styles.missionStatusLeft}>
+                                            <div style={{
+                                                ...styles.missionActiveIndicator,
+                                                backgroundColor: sensorsData.missionActive === 1 ? '#27ae60' : '#95a5a6'
+                                            }}>
+                                                {sensorsData.missionActive === 1 ? '🟢 MISSIONE ATTIVA' : '⚪ MISSIONE INATTIVA'}
+                                            </div>
+                                            <div style={styles.missionDetails}>
+                                                <span style={styles.missionName}>
+                                                    📋 {sensorsData.idMissionNow && sensorsData.idMissionNow !== "" ? sensorsData.idMissionNow : "Nessuna missione"}
+                                                </span>
+                                                <span style={styles.missionNumber}>
+                                                    #{sensorsData.nMissionNow !== "N/A" ? sensorsData.nMissionNow : "0"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div style={styles.missionStatusRight}>
+                                            <div style={styles.targetCoordinates}>
+                                                <div style={styles.coordinateItem}>
+                                                    <span style={styles.coordinateLabel}>Target Lat:</span>
+                                                    <span style={styles.coordinateValue}>
+                                                        {sensorsData.rifLatMission !== "N/A" ? parseFloat(sensorsData.rifLatMission).toFixed(6) + "°" : "N/A"}
+                                                    </span>
+                                                </div>
+                                                <div style={styles.coordinateItem}>
+                                                    <span style={styles.coordinateLabel}>Target Lon:</span>
+                                                    <span style={styles.coordinateValue}>
+                                                        {sensorsData.rifLonMission !== "N/A" ? parseFloat(sensorsData.rifLonMission).toFixed(6) + "°" : "N/A"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Map View */}
