@@ -454,27 +454,10 @@ const MapboxMap = ({
 
             // Forza il ridimensionamento quando la mappa è completamente caricata
             map.current.on('load', () => {
-                map.current.resize();
-                // Forza un secondo ridimensionamento dopo un breve delay
-                setTimeout(() => {
+                if (map.current) {
                     map.current.resize();
-                }, 100);
+                }
             });
-
-            // Aggiungi listener per il ridimensionamento della finestra
-            const handleResize = () => {
-                if (map.current) {
-                    map.current.resize();
-                }
-            };
-            window.addEventListener('resize', handleResize);
-
-            // Forza un ridimensionamento iniziale
-            setTimeout(() => {
-                if (map.current) {
-                    map.current.resize();
-                }
-            }, 100);
         }
 
         if (stateapp === 'WPY') {
@@ -483,8 +466,18 @@ const MapboxMap = ({
             map.current.off('click', funcOnClick);
         }
 
+        // Aggiungi listener per il ridimensionamento della finestra
+        const handleResize = () => {
+            if (map.current) {
+                map.current.resize();
+            }
+        };
+        window.addEventListener('resize', handleResize);
+
         return () => {
-            map.current.off('click', funcOnClick);
+            if (map.current) {
+                map.current.off('click', funcOnClick);
+            }
             window.removeEventListener('resize', handleResize);
         };
     }, [stateapp, handleAddMarker, funcOnClick, mapStyleUrl, clearMap, autoCenter]);
