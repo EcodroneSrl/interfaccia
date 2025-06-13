@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col, Container } from 'react-bootstrap';
 import { WebSocketContext } from '../Websockets';
-import MapboxMap from './MapboxMap';
+import MapboxMap from '../MapBox/Mapbox';
 
 const MapContext = React.createContext();
 const MapContextConsumer = MapContext.Consumer;
