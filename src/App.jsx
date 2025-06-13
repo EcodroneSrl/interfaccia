@@ -1111,7 +1111,10 @@ class DroneBoatInterface extends React.Component {
                             width: this.state.editorMode ? '100%' : 'auto'
                         }}>
                             {/* Camera View MODIFICATA */}
-                            <div style={styles.cameraView}>
+                            <div style={{
+                                ...styles.cameraView,
+                                display: this.state.editorMode ? 'none' : 'flex'
+                            }}>
                                 {/* Video principale di sfondo - telecamera che manda delle 4 */}
                                 <div style={styles.mainCameraBackground}>
                                     <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
