@@ -321,7 +321,7 @@ export const EcoMap = ({ children, appst, uuid }) => {
                     overflow: 'hidden'
                 }}>
                     <div style={{
-                        flex: stateapp === 'WPY' ? 1 : 0.7,
+                        flex: 1,
                         transition: 'flex 0.3s ease-in-out',
                         overflow: 'hidden'
                     }}>
@@ -332,16 +332,14 @@ export const EcoMap = ({ children, appst, uuid }) => {
                             selectedMission={selectedMission}
                         />
                     </div>
-                    {stateapp !== 'WPY' && (
-                        <div style={{
-                            flex: 0.3,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'hidden'
-                        }}>
-                            {children}
-                        </div>
-                    )}
+                    <div style={{
+                        flex: 0.3,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden'
+                    }}>
+                        {children}
+                    </div>
                 </div>
             </div>
         </MapContext.Provider>
