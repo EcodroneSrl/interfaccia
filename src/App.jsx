@@ -7,7 +7,7 @@ import { UserIdMonitoring } from './components/UserIdMonitoring';
 import { WebSocketProvider, WebSocketContext } from './components/Websockets';
 // Rimosso import BoatSensorsData - ora implementazione personalizzata
 import { Missions } from './components/Missions/Missions';
-import { EcoMap } from './components/MultiComponents/EcoMap';
+import { EcoMap, MapContext } from './components/MultiComponents/EcoMap';
 import { ChangeAppState } from './components/StateMonitoring';
 import MapboxMap from './components/MapBox/Mapbox';
 import MissionForm from './components/Form/MissionFormHeader';
@@ -17,6 +17,8 @@ import LiveStreamPlayer from './components/livestreamplayer';
 //casc
 
 export default class App extends React.Component {
+    static contextType = MapContext;
+
     constructor(props) {
         super(props);
 
@@ -41,6 +43,10 @@ export default class App extends React.Component {
                 editorMode: !prevState.editorMode,
                 appst: !prevState.editorMode ? 'WPY' : 'STD' // Forza sempre WPY quando si apre l'editor
             };
+            // Se stiamo attivando l'editor, aggiungi un marker fittizio
+            if (!prevState.editorMode && this.context && this.context.handleAddMarker) {
+                this.context.handleAddMarker({ lng: 12.5, lat: 41.9 }); // esempio: Roma
+            }
             console.log('Nuovo stato:', newState);
             return newState;
         });
