@@ -23,6 +23,12 @@ const MarkerList = ({ editorMode }) => {
         }
     }, [mapmarkers]);
 
+    useEffect(() => {
+        if (editorMode) {
+            setIsButtonVisible(false); // Simula il click su Submit Waypoint
+        }
+    }, [editorMode]);
+
     const handleInputChange = (e, index) => {
         const { name, value } = e.target;
         const updatedData = [...formData];
