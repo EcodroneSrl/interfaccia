@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { Row, Col, Container } from 'react-bootstrap';
 import { WebSocketContext } from '../Websockets';
-import MapboxMap from '../MapBox/Mapbox';
 
 const MapContext = React.createContext();
 const MapContextConsumer = MapContext.Consumer;
@@ -31,9 +29,6 @@ export const EcoMap = ({ children, appst, uuid }) => {
     });
 
     const [stateapp, setStateApp] = useState(appst);
-    const [mapStyle, setMapStyle] = useState('mapbox://styles/mapbox/streets-v11');
-    const [missionWaypoints, setMissionWaypoints] = useState([]);
-    const [selectedMission, setSelectedMission] = useState(null);
 
     const createNewFeature = (
         coordinates = [],
@@ -307,23 +302,7 @@ export const EcoMap = ({ children, appst, uuid }) => {
             headerData,
             stateapp
         }}>
-            <Container fluid style={{ height: '100vh', padding: 0 }}>
-                <Row style={{ height: '100%', margin: 0 }}>
-                    <Col xs={9} style={{ padding: 0, height: '100%' }}>
-                        <div style={{ height: '100%', position: 'relative' }}>
-                            <MapboxMap
-                                stateapp={stateapp}
-                                mapStyle={mapStyle}
-                                missionWaypoints={missionWaypoints}
-                                selectedMission={selectedMission}
-                            />
-                        </div>
-                    </Col>
-                    <Col xs={3} style={{ padding: '10px', height: '100%', overflowY: 'auto' }}>
-                        {children}
-                    </Col>
-                </Row>
-            </Container>
+            {children}
         </MapContext.Provider>
     );
 };
