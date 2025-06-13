@@ -24,8 +24,7 @@ export default class App extends React.Component {
             tocktock: "NNN",
             mapMode: "NNN",
             appst: "STD",
-            selectedMode: "Teleguidata",
-            isEditorMode: false // NUOVO: stato per modalità editor
+            selectedMode: "Teleguidata"
         };
     }
 
@@ -33,15 +32,8 @@ export default class App extends React.Component {
         this.setState({ tocktock: ticktock });
     };
 
-    // NUOVA: funzione per toggle modalità editor
-    toggleEditorMode = () => {
-        this.setState(prevState => ({
-            isEditorMode: !prevState.isEditorMode
-        }));
-    };
-
     render() {
-        const { tocktock, appst, user_id, selectedMode, isEditorMode } = this.state;
+        const { tocktock, appst, user_id, selectedMode } = this.state;
 
         const setAppState = (newState) => {
             this.setState({ appst: newState });
@@ -60,8 +52,6 @@ export default class App extends React.Component {
                             user_id={user_id}
                             setAppState={setAppState}
                             setUserId={setUserId}
-                            isEditorMode={isEditorMode}
-                            toggleEditorMode={this.toggleEditorMode}
                         />
                     </EcoMap>
                 </WebSocketProvider>
@@ -893,7 +883,7 @@ class DroneBoatInterface extends React.Component {
 
     render() {
         try {
-            const { appst, user_id, setAppState, isEditorMode, toggleEditorMode } = this.props;
+            const { appst, user_id, setAppState } = this.props;
             const {
                 serverIp,
                 userId,
@@ -975,10 +965,10 @@ class DroneBoatInterface extends React.Component {
                         </div>
                     </div>
 
-                    {/* Container - MODIFICATO per modalità editor */}
-                    <div style={isEditorMode ? styles.containerEditor : styles.container}>
+                    {/* Container */}
+                    <div style={styles.container}>
                         {/* Left Sidebar */}
-                        <div style={isEditorMode ? styles.sidebarEditor : styles.sidebar}>
+                        <div style={styles.sidebar}>
                             <div style={styles.sectionTitle}>Albero Missioni</div>
                             <button style={styles.blueBtn} onClick={this.handleRefreshMissions}>
                                 🔄 Aggiorna
@@ -1082,54 +1072,38 @@ class DroneBoatInterface extends React.Component {
                                 <div style={{ ...styles.waypoint, top: '50%', left: '80%' }}>3</div>
                                 <div style={{ ...styles.waypoint, top: '70%', left: '30%' }}>4</div>
                             </div>
-                            
-                            {/* MODIFICATO: Pulsante Apri Editor con toggle */}
-                            <button 
-                                style={{
-                                    ...styles.blueBtn,
-                                    backgroundColor: isEditorMode ? '#e74c3c' : '#3498db',
-                                    width: '100%',
-                                    marginBottom: '10px'
-                                }}
-                                onClick={toggleEditorMode}
-                            >
-                                {isEditorMode ? '📋 Torna Vista Normale' : '✏️ Apri Editor'}
-                            </button>
+                            <button style={styles.blueBtn}>Apri Editor</button>
 
-                            {!isEditorMode && (
-                                <div style={{ marginTop: '20px' }}>
-                                    <ChangeAppState changeState={setAppState} uuid={safeUserId} />
-                                </div>
-                            )}
+                            <div style={{ marginTop: '20px' }}>
+                                <ChangeAppState changeState={setAppState} uuid={safeUserId} />
+                            </div>
                         </div>
 
-                        {/* Main Content - MODIFICATO per modalità editor */}
-                        <div style={isEditorMode ? styles.mainContentEditor : styles.mainContent}>
-                            {/* Camera View - NASCOSTO in modalità editor */}
-                            {!isEditorMode && (
-                                <div style={styles.cameraView}>
-                                    {/* Video principale di sfondo - telecamera che manda delle 4 */}
-                                    <div style={styles.mainCameraBackground}>
-                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
+                        {/* Main Content */}
+                        <div style={styles.mainContent}>
+                            {/* Camera View MODIFICATA */}
+                            <div style={styles.cameraView}>
+                                {/* Video principale di sfondo - telecamera che manda delle 4 */}
+                                <div style={styles.mainCameraBackground}>
+                                    <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream3/video1_stream.m3u8" />
+                                </div>
+                                
+                                {/* Overlay con le 3 telecamere secondarie - centrate e più grandi */}
+                                <div style={styles.cameraOverlay}>
+                                    {/* Sinistra: quella che era centrale (stream2) */}
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
                                     </div>
-                                    
-                                    {/* Overlay con le 3 telecamere secondarie - centrate e più grandi */}
-                                    <div style={styles.cameraOverlay}>
-                                        {/* Sinistra: quella che era centrale (stream2) */}
-                                        <div style={styles.overlayCamera}>
-                                            <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream2/video1_stream.m3u8" />
-                                        </div>
-                                        {/* Centro: telecamera posteriore */}
-                                        <div style={styles.overlayCamera}>
-                                            <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
-                                        </div>
-                                        {/* Destra: quella che era grande (stream1 - frontale) */}
-                                        <div style={styles.overlayCamera}>
-                                            <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
-                                        </div>
+                                    {/* Centro: telecamera posteriore */}
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream0/video1_stream.m3u8" />
+                                    </div>
+                                    {/* Destra: quella che era grande (stream1 - frontale) */}
+                                    <div style={styles.overlayCamera}>
+                                        <LiveStreamPlayer url="https://livestreaming.hightek.it/ecodrone/MGEC0001/stream1/video1_stream.m3u8" />
                                     </div>
                                 </div>
-                            )}
+                            </div>
 
                             {/* NUOVO: Header informazioni missione */}
                             <div style={styles.missionStatusHeader}>
@@ -1169,11 +1143,9 @@ class DroneBoatInterface extends React.Component {
                                 </div>
                             </div>
 
-                            {/* Map View - ESPANSA in modalità editor */}
-                            <div style={isEditorMode ? styles.mapViewEditor : styles.mapView}>
-                                <h2 style={{ color: 'white', padding: '10px' }}>
-                                    {isEditorMode ? 'Editor Missioni - Mappa Espansa' : 'Mappa Satellitare'}
-                                </h2>
+                            {/* Map View */}
+                            <div style={styles.mapView}>
+                                <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
 
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
                                     <MapboxMap
@@ -1209,325 +1181,318 @@ class DroneBoatInterface extends React.Component {
                                             Missione: {this.getMissionName(safeSelectedMission)}
                                         </div>
                                     )}
-                                    {isEditorMode && (
-                                        <div style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                                            🎯 MODALITÀ EDITOR ATTIVA
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right Sidebar - NASCOSTA in modalità editor */}
-                        {!isEditorMode && (
-                            <div style={styles.rightSidebar}>
-                                <div style={styles.sectionTitle}>Telemetria</div>
+                        {/* Right Sidebar */}
+                        <div style={styles.rightSidebar}>
+                            <div style={styles.sectionTitle}>Telemetria</div>
 
-                                {/* SEZIONE DATI SENSORI PERSONALIZZATA */}
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Dati Sensori</div>
+                            {/* SEZIONE DATI SENSORI PERSONALIZZATA */}
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Dati Sensori</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>BoostX:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.boostX}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>EnergyC:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.energyC}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>EnergyP:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.energyP}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Fix:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.fix}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Gas:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.gas}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Heading:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.heading}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>HeadingD:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.headingD}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Hmare:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.hmare}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Lat:</span>
+                                    <span style={{...styles.telemetryValue, color: sensorsData.lat !== "N/A" ? '#27ae60' : '#95a5a6'}}>
+                                        {sensorsData.lat}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Lon:</span>
+                                    <span style={{...styles.telemetryValue, color: sensorsData.lon !== "N/A" ? '#27ae60' : '#95a5a6'}}>
+                                        {sensorsData.lon}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Pitch:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.pitch}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Roll:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.roll}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Ruota:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.ruota}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>TetaB:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.tetaB}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>TetaD:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.tetaD}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Vel_GPS:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.velGPS}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>ViraY:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.viraY}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>boatNavMode:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.boatNavMode}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>idMissionNow:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.idMissionNow}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>millis:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.millis}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>mission_active:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.missionActive}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>nMissionNow:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.nMissionNow}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rifLatMission:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rifLatMission}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rifLatTrue:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rifLatTrue}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rifLonMission:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rifLonMission}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rifLonTrue:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rifLonTrue}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmCD:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmCD}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmCDc:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmCDc}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmCS:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmCS}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmCSc:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmCSc}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmDD:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmDD}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmDDc:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmDDc}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmSS:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmSS}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>rpmSSc:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.rpmSSc}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>vel_D:</span>
+                                    <span style={styles.telemetryValue}>{sensorsData.velD}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Posizione</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Lat:</span>
+                                    <span style={styles.telemetryValue}>{positionData.lat}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Lon:</span>
+                                    <span style={styles.telemetryValue}>{positionData.lon}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Altitude:</span>
+                                    <span style={styles.telemetryValue}>{positionData.altitude}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>FIX:</span>
+                                    <span style={styles.telemetryValue}>{positionData.fix}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Heading:</span>
+                                    <span style={styles.telemetryValue}>{positionData.heading}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>HeadingD:</span>
+                                    <span style={styles.telemetryValue}>{positionData.headingD}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Vel_GPS:</span>
+                                    <span style={styles.telemetryValue}>{positionData.velGPS}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Orientamento</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Pitch:</span>
+                                    <span style={styles.telemetryValue}>{orientationData.pitch}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Roll:</span>
+                                    <span style={styles.telemetryValue}>{orientationData.roll}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Yaw:</span>
+                                    <span style={styles.telemetryValue}>{orientationData.yaw}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Navigazione</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Velocità:</span>
+                                    <span style={styles.telemetryValue}>{navigationData.velocity}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Rotta:</span>
+                                    <span style={styles.telemetryValue}>{navigationData.course}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Target:</span>
+                                    <span style={styles.telemetryValue}>{navigationData.target}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Energia</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Consumo:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.consumption}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Generazione:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.generation}</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Efficienza:</span>
+                                    <span style={styles.telemetryValue}>{energyData.efficiency}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Motori RPM</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreDD:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.dd.rpm} | C:{motorsData.dd.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreCD:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.cd.rpm} | C:{motorsData.cd.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreCS:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.cs.rpm} | C:{motorsData.cs.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>MotoreSS:</span>
+                                    <span style={{ ...styles.telemetryValue, color: 'orange' }}>
+                                        {motorsData.ss.rpm} | C:{motorsData.ss.cmd}
+                                    </span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Media:</span>
+                                    <span style={styles.telemetryValue}>{motorsData.average}</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.telemetrySection}>
+                                <div style={styles.sectionTitle}>Stato Sistema</div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Temperatura:</span>
+                                    <span style={styles.telemetryValue}>28°C</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Umidità:</span>
+                                    <span style={styles.telemetryValue}>65%</span>
+                                </div>
+                                <div style={styles.telemetryItem}>
+                                    <span style={styles.telemetryLabel}>Autonomia:</span>
+                                    <span style={styles.telemetryValue}>4.5h</span>
+                                </div>
+                            </div>
+
+                            <div style={styles.joystickSection}>
+                                <div style={styles.sectionTitle}>Controllo Joystick</div>
+
+                                <div style={styles.joystickDataSection}>
                                     <div style={styles.telemetryItem}>
                                         <span style={styles.telemetryLabel}>BoostX:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.boostX}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>EnergyC:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.energyC}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>EnergyP:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.energyP}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Fix:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.fix}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Gas:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.gas}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Heading:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.heading}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>HeadingD:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.headingD}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Hmare:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.hmare}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Lat:</span>
-                                        <span style={{...styles.telemetryValue, color: sensorsData.lat !== "N/A" ? '#27ae60' : '#95a5a6'}}>
-                                            {sensorsData.lat}
-                                        </span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Lon:</span>
-                                        <span style={{...styles.telemetryValue, color: sensorsData.lon !== "N/A" ? '#27ae60' : '#95a5a6'}}>
-                                            {sensorsData.lon}
-                                        </span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Pitch:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.pitch}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Roll:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.roll}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Ruota:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.ruota}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>TetaB:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.tetaB}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>TetaD:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.tetaD}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Vel_GPS:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.velGPS}</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.boostX}</span>
                                     </div>
                                     <div style={styles.telemetryItem}>
                                         <span style={styles.telemetryLabel}>ViraY:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.viraY}</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.viraY}</span>
                                     </div>
                                     <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>boatNavMode:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.boatNavMode}</span>
+                                        <span style={styles.telemetryLabel}>Gas:</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#4CAF50' }}>{joystickData.gas}</span>
                                     </div>
                                     <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>idMissionNow:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.idMissionNow}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>millis:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.millis}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>mission_active:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.missionActive}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>nMissionNow:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.nMissionNow}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rifLatMission:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rifLatMission}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rifLatTrue:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rifLatTrue}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rifLonMission:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rifLonMission}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rifLonTrue:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rifLonTrue}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmCD:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmCD}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmCDc:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmCDc}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmCS:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmCS}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmCSc:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmCSc}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmDD:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmDD}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmDDc:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmDDc}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmSS:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmSS}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>rpmSSc:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.rpmSSc}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>vel_D:</span>
-                                        <span style={styles.telemetryValue}>{sensorsData.velD}</span>
+                                        <span style={styles.telemetryLabel}>Ruota:</span>
+                                        <span style={{ ...styles.telemetryValue, color: '#FF9800' }}>{joystickData.ruota}</span>
                                     </div>
                                 </div>
 
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Posizione</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Lat:</span>
-                                        <span style={styles.telemetryValue}>{positionData.lat}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Lon:</span>
-                                        <span style={styles.telemetryValue}>{positionData.lon}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Altitude:</span>
-                                        <span style={styles.telemetryValue}>{positionData.altitude}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>FIX:</span>
-                                        <span style={styles.telemetryValue}>{positionData.fix}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Heading:</span>
-                                        <span style={styles.telemetryValue}>{positionData.heading}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>HeadingD:</span>
-                                        <span style={styles.telemetryValue}>{positionData.headingD}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Vel_GPS:</span>
-                                        <span style={styles.telemetryValue}>{positionData.velGPS}</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Orientamento</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Pitch:</span>
-                                        <span style={styles.telemetryValue}>{orientationData.pitch}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Roll:</span>
-                                        <span style={styles.telemetryValue}>{orientationData.roll}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Yaw:</span>
-                                        <span style={styles.telemetryValue}>{orientationData.yaw}</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Navigazione</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Velocità:</span>
-                                        <span style={styles.telemetryValue}>{navigationData.velocity}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Rotta:</span>
-                                        <span style={styles.telemetryValue}>{navigationData.course}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Target:</span>
-                                        <span style={styles.telemetryValue}>{navigationData.target}</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Energia</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Consumo:</span>
-                                        <span style={{ ...styles.telemetryValue, color: 'red' }}>{energyData.consumption}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Generazione:</span>
-                                        <span style={{ ...styles.telemetryValue, color: 'green' }}>{energyData.generation}</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Efficienza:</span>
-                                        <span style={styles.telemetryValue}>{energyData.efficiency}</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Motori RPM</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>MotoreDD:</span>
-                                        <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                            {motorsData.dd.rpm} | C:{motorsData.dd.cmd}
-                                        </span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>MotoreCD:</span>
-                                        <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                            {motorsData.cd.rpm} | C:{motorsData.cd.cmd}
-                                        </span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>MotoreCS:</span>
-                                        <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                            {motorsData.cs.rpm} | C:{motorsData.cs.cmd}
-                                        </span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>MotoreSS:</span>
-                                        <span style={{ ...styles.telemetryValue, color: 'orange' }}>
-                                            {motorsData.ss.rpm} | C:{motorsData.ss.cmd}
-                                        </span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Media:</span>
-                                        <span style={styles.telemetryValue}>{motorsData.average}</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.telemetrySection}>
-                                    <div style={styles.sectionTitle}>Stato Sistema</div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Temperatura:</span>
-                                        <span style={styles.telemetryValue}>28°C</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Umidità:</span>
-                                        <span style={styles.telemetryValue}>65%</span>
-                                    </div>
-                                    <div style={styles.telemetryItem}>
-                                        <span style={styles.telemetryLabel}>Autonomia:</span>
-                                        <span style={styles.telemetryValue}>4.5h</span>
-                                    </div>
-                                </div>
-
-                                <div style={styles.joystickSection}>
-                                    <div style={styles.sectionTitle}>Controllo Joystick</div>
-
-                                    <div style={styles.joystickDataSection}>
-                                        <div style={styles.telemetryItem}>
-                                            <span style={styles.telemetryLabel}>BoostX:</span>
-                                            <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.boostX}</span>
-                                        </div>
-                                        <div style={styles.telemetryItem}>
-                                            <span style={styles.telemetryLabel}>ViraY:</span>
-                                            <span style={{ ...styles.telemetryValue, color: '#2196F3' }}>{joystickData.viraY}</span>
-                                        </div>
-                                        <div style={styles.telemetryItem}>
-                                            <span style={styles.telemetryLabel}>Gas:</span>
-                                            <span style={{ ...styles.telemetryValue, color: '#4CAF50' }}>{joystickData.gas}</span>
-                                        </div>
-                                        <div style={styles.telemetryItem}>
-                                            <span style={styles.telemetryLabel}>Ruota:</span>
-                                            <span style={{ ...styles.telemetryValue, color: '#FF9800' }}>{joystickData.ruota}</span>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left', marginTop: '10px' }}>
-                                        <JoystickReader stateapp={safeAppst} userid={safeUserId} />
-                                    </div>
+                                <div style={{ fontSize: '12px', transform: 'scale(0.8)', transformOrigin: 'top left', marginTop: '10px' }}>
+                                    <JoystickReader stateapp={safeAppst} userid={safeUserId} />
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* PANNELLO INFORMAZIONI MISSIONE */}
@@ -1722,7 +1687,7 @@ class DroneBoatInterface extends React.Component {
     }
 }
 
-// Styles object AGGIORNATO con i nuovi stili per la modalità editor
+// Styles object AGGIORNATO con i nuovi stili per la camera
 const styles = {
     body: {
         margin: 0,
@@ -1811,3 +1776,404 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start'
+    },
+    batteryTotal: {
+        fontSize: '11px',
+        color: '#cccccc',
+        lineHeight: '1'
+    },
+    batteryStatus: {
+        fontSize: '9px',
+        fontWeight: 'bold',
+        lineHeight: '1'
+    },
+    uptimeIndicator: {
+        backgroundColor: '#27ae60',
+        color: 'white',
+        padding: '5px 10px',
+        borderRadius: '5px',
+        fontSize: '14px',
+        fontWeight: 'bold'
+    },
+    container: {
+        display: 'flex',
+        height: 'calc(100vh - 50px)'
+    },
+    sidebar: {
+        width: '300px',
+        backgroundColor: 'white',
+        padding: '10px',
+        borderRight: '1px solid #ddd',
+        overflowY: 'auto'
+    },
+    mainContent: {
+        flex: 1,
+        padding: '10px',
+        display: 'flex',
+        flexDirection: 'column'
+    },
+    rightSidebar: {
+        width: '300px',
+        backgroundColor: 'white',
+        padding: '10px',
+        borderLeft: '1px solid #ddd',
+        overflowY: 'auto'
+    },
+    sectionTitle: {
+        fontWeight: 'bold',
+        marginBottom: '10px',
+        paddingBottom: '5px',
+        borderBottom: '1px solid #ddd'
+    },
+    treeItem: {
+        padding: '5px 10px',
+        margin: '2px 0',
+        backgroundColor: '#f8f8f8',
+        cursor: 'pointer',
+        borderRadius: '3px',
+        transition: 'background-color 0.2s'
+    },
+    selected: {
+        backgroundColor: '#e0f0ff',
+        border: '1px solid #3498db'
+    },
+    selectedMissionInfo: {
+        border: '2px solid #4CAF50',
+        borderRadius: '8px',
+        padding: '10px',
+        marginBottom: '10px',
+        backgroundColor: '#f0f8f0'
+    },
+    blueBtn: {
+        backgroundColor: '#3498db',
+        color: 'white',
+        padding: '8px 15px',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        margin: '5px',
+        transition: 'background-color 0.2s'
+    },
+    greenBtn: {
+        backgroundColor: '#2ecc71',
+        color: 'white',
+        padding: '8px 15px',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        margin: '5px',
+        transition: 'background-color 0.2s'
+    },
+    redBtn: {
+        backgroundColor: '#e74c3c',
+        color: 'white',
+        padding: '8px 15px',
+        border: 'none',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        margin: '5px',
+        transition: 'background-color 0.2s'
+    },
+    btnGroup: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        margin: '10px 0'
+    },
+    dropdown: {
+        position: 'relative',
+        display: 'inline-block',
+        margin: '5px'
+    },
+    // *** NUOVI STILI CAMERA ***
+    cameraView: {
+        flex: 2,
+        backgroundColor: '#000', // Nero per miglior contrasto
+        marginBottom: '10px',
+        color: 'white',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        minHeight: '400px'
+    },
+    mainCameraBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 1
+    },
+    cameraOverlay: {
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        display: 'flex',
+        gap: '15px',
+        zIndex: 10
+    },
+    overlayCamera: {
+        width: '220px',
+        height: '150px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+        border: '2px solid rgba(255,255,255,0.3)',
+        backgroundColor: 'transparent',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        cursor: 'pointer'
+    },
+    // *** FINE NUOVI STILI CAMERA ***
+    mapView: {
+        flex: 1,
+        backgroundColor: '#1a3a5a',
+        position: 'relative',
+        minHeight: '400px'
+    },
+    telemetrySection: {
+        backgroundColor: 'white',
+        marginBottom: '10px',
+        padding: '10px',
+        borderRadius: '5px',
+        border: '1px solid #e0e0e0'
+    },
+    telemetryItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        margin: '8px 0',
+        padding: '4px 0',
+        borderBottom: '1px solid #f0f0f0',
+        minHeight: '24px'
+    },
+    telemetryLabel: {
+        fontWeight: 'bold',
+        color: '#555',
+        fontSize: '13px',
+        minWidth: '80px',
+        textAlign: 'left'
+    },
+    telemetryValue: {
+        fontSize: '13px',
+        color: '#333',
+        fontWeight: '500',
+        textAlign: 'right',
+        flex: 1
+    },
+    waypoint: {
+        position: 'absolute',
+        width: '30px',
+        height: '30px',
+        borderRadius: '50%',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        fontWeight: 'bold',
+        cursor: 'pointer'
+    },
+    miniMap: {
+        width: '100%',
+        height: '200px',
+        backgroundColor: '#1a3a5a',
+        marginTop: '10px',
+        position: 'relative'
+    },
+    overlayPanel: {
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        maxWidth: '200px',
+        maxHeight: '40vh',
+        overflowY: 'auto',
+        zIndex: 20,
+        fontSize: '11px',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.15)',
+        border: '1px solid #ccc'
+    },
+    hideNoDataText: {
+        transition: 'opacity 0.3s ease'
+    },
+    mapInfoBottom: {
+        position: 'absolute',
+        bottom: '10px',
+        left: '10px',
+        display: 'flex',
+        gap: '20px',
+        color: 'white'
+    },
+    joystickSection: {
+        backgroundColor: '#f8f9fa',
+        padding: '8px',
+        marginBottom: '10px',
+        borderRadius: '5px',
+        border: '1px solid #e0e0e0'
+    },
+    joystickDataSection: {
+        backgroundColor: '#ffffff',
+        padding: '8px',
+        borderRadius: '4px',
+        border: '1px solid #ddd',
+        marginBottom: '10px'
+    },
+    missionsTreeContainer: {
+        maxHeight: '300px',
+        overflowY: 'auto',
+        marginBottom: '10px',
+        border: '1px solid #e0e0e0',
+        borderRadius: '5px',
+        backgroundColor: '#fafafa'
+    },
+
+    // STILI PER IL HEADER MISSIONE
+    missionStatusHeader: {
+        backgroundColor: '#1a3a5a',
+        color: 'white',
+        padding: '10px 20px',
+        marginBottom: '10px',
+        borderRadius: '5px'
+    },
+    missionStatusContainer: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    missionStatusLeft: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '15px'
+    },
+    missionActiveIndicator: {
+        padding: '8px 15px',
+        borderRadius: '20px',
+        fontWeight: 'bold',
+        fontSize: '14px'
+    },
+    missionDetails: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px'
+    },
+    missionName: {
+        fontSize: '16px',
+        fontWeight: 'bold'
+    },
+    missionNumber: {
+        fontSize: '14px',
+        color: '#cccccc'
+    },
+    missionStatusRight: {
+        display: 'flex',
+        alignItems: 'center'
+    },
+    targetCoordinates: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px'
+    },
+    coordinateItem: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: '10px'
+    },
+    coordinateLabel: {
+        fontSize: '12px',
+        color: '#cccccc'
+    },
+    coordinateValue: {
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: 'white'
+    },
+
+    // NUOVI STILI PER IL PANNELLO MISSIONE
+    missionPanel: {
+        position: 'fixed',
+        bottom: '0',
+        left: '0',
+        right: '0',
+        backgroundColor: 'white',
+        borderTop: '3px solid #1a3a5a',
+        boxShadow: '0 -4px 15px rgba(0,0,0,0.2)',
+        zIndex: 1000,
+        maxHeight: '50vh',
+        overflowY: 'auto'
+    },
+    missionPanelHeader: {
+        padding: '15px 20px',
+        borderBottom: '2px solid #eee',
+        backgroundColor: '#f8f9fa'
+    },
+    missionInfoGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '8px',
+        fontSize: '12px',
+        color: '#666',
+        backgroundColor: '#ffffff',
+        padding: '12px',
+        borderRadius: '6px',
+        border: '1px solid #ddd',
+        marginTop: '10px'
+    },
+    missionPanelContent: {
+        padding: '0 20px 20px 20px'
+    },
+    table: {
+        width: '100%',
+        borderCollapse: 'collapse',
+        marginTop: '15px',
+        fontSize: '13px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    },
+    tableHeaderRow: {
+        backgroundColor: '#1a3a5a'
+    },
+    tableHeader: {
+        padding: '12px 8px',
+        textAlign: 'left',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '12px',
+        border: '1px solid #2c5282'
+    },
+    tableRow: {
+        borderBottom: '1px solid #eee',
+        transition: 'background-color 0.2s'
+    },
+    tableCell: {
+        padding: '10px 8px',
+        border: '1px solid #eee',
+        fontSize: '12px',
+        verticalAlign: 'middle'
+    },
+    loadingContainer: {
+        padding: '20px',
+        textAlign: 'center',
+        backgroundColor: '#f8f9fa',
+        border: '1px solid #3498db',
+        borderRadius: '6px',
+        color: '#3498db'
+    },
+    loadingSpinner: {
+        width: '24px',
+        height: '24px',
+        border: '3px solid #f3f3f3',
+        borderTop: '3px solid #3498db',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        margin: '10px auto'
+    },
+    simpleMessage: {
+        padding: '15px',
+        textAlign: 'center',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '6px',
+        color: '#666',
+        fontSize: '13px'
+    }
+};
