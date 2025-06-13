@@ -1217,7 +1217,7 @@ class DroneBoatInterface extends React.Component {
                             {/* Tabella Waypoints sotto la mappa, a tutta larghezza */}
                             {this.state.editorMode && (
                                 <div style={{ width: '100%', background: '#fff', padding: '20px 0', margin: 0 }}>
-                                    <MarkerList editorMode={this.state.editorMode} />
+                                    <MarkerList editorMode={this.state.editorMode} autoSubmit={this.state.editorMode} />
                                 </div>
                             )}
 

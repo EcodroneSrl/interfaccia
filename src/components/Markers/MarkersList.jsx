@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Button, Form, Col, Row, Table } from 'react-bootstrap';
 import { MapContext } from '../MultiComponents/EcoMap';
 
-const MarkerList = ({ editorMode }) => {
+const MarkerList = ({ editorMode, autoSubmit }) => {
     const { mapmarkers, handleSubmitFormPoints, handleSinglePointSingleValueChange } = useContext(MapContext);
     const [formData, setFormData] = useState([]);
     const [isButtonVisible, setIsButtonVisible] = useState(true);
@@ -28,6 +28,12 @@ const MarkerList = ({ editorMode }) => {
             setIsButtonVisible(false); // Simula il click su Submit Waypoint
         }
     }, [editorMode]);
+
+    useEffect(() => {
+        if (autoSubmit) {
+            setIsButtonVisible(false); // Simula il click su Submit
+        }
+    }, [autoSubmit]);
 
     const handleInputChange = (e, index) => {
         const { name, value } = e.target;
@@ -166,7 +172,8 @@ const MarkerList = ({ editorMode }) => {
 };
 
 MarkerList.propTypes = {
-    editorMode: PropTypes.bool
+    editorMode: PropTypes.bool,
+    autoSubmit: PropTypes.bool
 };
 
 export default MarkerList;
