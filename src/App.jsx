@@ -39,7 +39,7 @@ export default class App extends React.Component {
         this.setState(prevState => {
             const newState = {
                 editorMode: !prevState.editorMode,
-                appst: !prevState.editorMode ? 'WPY' : 'STD' // Cambia lo stato dell'app quando si attiva/disattiva l'editor
+                appst: !prevState.editorMode ? 'WPY' : 'STD' // Forza sempre WPY quando si apre l'editor
             };
             console.log('Nuovo stato:', newState);
             return newState;
