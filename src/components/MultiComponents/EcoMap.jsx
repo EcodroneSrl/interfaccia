@@ -307,41 +307,23 @@ export const EcoMap = ({ children, appst, uuid }) => {
             headerData,
             stateapp
         }}>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100vh',
-                width: '100vw',
-                overflow: 'hidden'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flex: 1,
-                    overflow: 'hidden'
-                }}>
-                    <div style={{
-                        flex: 1,
-                        transition: 'flex 0.3s ease-in-out',
-                        overflow: 'hidden'
-                    }}>
-                        <MapboxMap
-                            stateapp={stateapp}
-                            mapStyle={mapStyle}
-                            missionWaypoints={missionWaypoints}
-                            selectedMission={selectedMission}
-                        />
-                    </div>
-                    <div style={{
-                        flex: 0.3,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        overflow: 'hidden'
-                    }}>
+            <Container fluid style={{ height: '100vh', padding: 0 }}>
+                <Row style={{ height: '100%', margin: 0 }}>
+                    <Col xs={9} style={{ padding: 0, height: '100%' }}>
+                        <div style={{ height: '100%', position: 'relative' }}>
+                            <MapboxMap
+                                stateapp={stateapp}
+                                mapStyle={mapStyle}
+                                missionWaypoints={missionWaypoints}
+                                selectedMission={selectedMission}
+                            />
+                        </div>
+                    </Col>
+                    <Col xs={3} style={{ padding: '10px', height: '100%', overflowY: 'auto' }}>
                         {children}
-                    </div>
-                </div>
-            </div>
+                    </Col>
+                </Row>
+            </Container>
         </MapContext.Provider>
     );
 };
