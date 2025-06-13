@@ -1108,12 +1108,15 @@ class DroneBoatInterface extends React.Component {
                             ...styles.mainContent,
                             flex: this.state.editorMode ? '1' : '3',
                             transition: 'all 0.3s ease-in-out',
-                            width: this.state.editorMode ? '100%' : 'auto'
+                            width: this.state.editorMode ? '100%' : 'auto',
+                            display: 'flex',
+                            flexDirection: 'column'
                         }}>
                             {/* Camera View MODIFICATA */}
                             <div style={{
                                 ...styles.cameraView,
-                                display: this.state.editorMode ? 'none' : 'flex'
+                                display: this.state.editorMode ? 'none' : 'flex',
+                                flex: this.state.editorMode ? '0' : '2'
                             }}>
                                 {/* Video principale di sfondo - telecamera che manda delle 4 */}
                                 <div style={styles.mainCameraBackground}>
@@ -1179,7 +1182,9 @@ class DroneBoatInterface extends React.Component {
                             <div style={{
                                 ...styles.mapView,
                                 flex: this.state.editorMode ? '1' : '1',
-                                height: this.state.editorMode ? '100vh' : 'auto'
+                                height: this.state.editorMode ? 'calc(100vh - 60px)' : 'auto',
+                                minHeight: this.state.editorMode ? 'calc(100vh - 60px)' : '400px',
+                                transition: 'all 0.3s ease-in-out'
                             }}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
 
