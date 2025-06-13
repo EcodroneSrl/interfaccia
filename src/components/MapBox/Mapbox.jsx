@@ -452,16 +452,9 @@ const MapboxMap = ({
                 .addTo(map.current);
 
             map.current.on('move', funcOnMove);
-
-            // Forza il ridimensionamento quando la mappa è completamente caricata
-            map.current.on('load', () => {
-                if (map.current) {
-                    map.current.resize();
-                }
-            });
         }
 
-        // Gestione dei click sulla mappa per l'aggiunta di waypoint
+        // Gestione dei click sulla mappa
         const handleMapClick = (e) => {
             if (stateapp === 'WPY' && handleAddMarker) {
                 const { lng, lat } = e.lngLat;
@@ -469,7 +462,9 @@ const MapboxMap = ({
             }
         };
 
+        // Rimuovi eventuali listener precedenti
         if (map.current) {
+            map.current.off('click');
             map.current.on('click', handleMapClick);
         }
 
@@ -483,11 +478,11 @@ const MapboxMap = ({
 
         return () => {
             if (map.current) {
-                map.current.off('click', handleMapClick);
+                map.current.off('click');
             }
             window.removeEventListener('resize', handleResize);
         };
-    }, [stateapp, handleAddMarker, mapStyleUrl, clearMap, autoCenter]);
+    }, [stateapp, handleAddMarker, mapStyleUrl]);
 
     // Cleanup quando il componente viene smontato
     useEffect(() => {
