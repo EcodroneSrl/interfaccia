@@ -1079,7 +1079,12 @@ class DroneBoatInterface extends React.Component {
                                 <div style={{ ...styles.waypoint, top: '50%', left: '80%' }}>3</div>
                                 <div style={{ ...styles.waypoint, top: '70%', left: '30%' }}>4</div>
                             </div>
-                            <button style={styles.blueBtn}>Apri Editor</button>
+                            <button 
+                                style={styles.blueBtn}
+                                onClick={this.toggleEditorMode}
+                            >
+                                {this.state.editorMode ? 'Chiudi Editor' : 'Apri Editor'}
+                            </button>
 
                             <div style={{ marginTop: '20px' }}>
                                 <ChangeAppState changeState={setAppState} uuid={safeUserId} />
@@ -1119,18 +1124,6 @@ class DroneBoatInterface extends React.Component {
                                 height: this.state.editorMode ? '100vh' : 'auto'
                             }}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
-                                <button 
-                                    style={{
-                                        ...styles.blueBtn,
-                                        position: 'absolute',
-                                        top: '10px',
-                                        right: '10px',
-                                        zIndex: 1000
-                                    }}
-                                    onClick={this.toggleEditorMode}
-                                >
-                                    {this.state.editorMode ? 'Chiudi Editor' : 'Apri Editor'}
-                                </button>
 
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
                                     <MapboxMap
