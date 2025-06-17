@@ -76,7 +76,8 @@ class DroneBoatInterface extends React.Component {
             missionWaypoints: null,
             missionInfo: null,
             showMissionOnMap: false,
-            isLoadingWaypoints: false // Per mostrare lo stato di caricamento
+            isLoadingWaypoints: false, // Per mostrare lo stato di caricamento
+            editorMode: false // Nuova proprietà per gestire la modalità editor
         };
     }
 
@@ -1147,7 +1148,15 @@ class DroneBoatInterface extends React.Component {
                             <div style={styles.mapView}>
                                 <h2 style={{ color: 'white', padding: '10px' }}>Mappa Satellitare</h2>
 
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }}>
+                                <div
+                                    style={{
+                                        width: '100%',
+                                        height: this.state.editorMode ? 'calc(100vh - 60px)' : '400px',
+                                        minHeight: this.state.editorMode ? 'calc(100vh - 60px)' : '400px',
+                                        transition: 'all 0.3s ease-in-out',
+                                        position: 'relative'
+                                    }}
+                                >
                                     <MapboxMap
                                         stateapp={safeAppst}
                                         missionWaypoints={showMissionOnMap ? missionWaypoints : null}
